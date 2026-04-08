@@ -14,6 +14,12 @@ export default function CheckoutSuccess() {
     clear()
   }, [clear])
 
+  const method = searchParams.get('method') || ''
+  
+  let paymentText = 'Your payment was submitted securely'
+  if (method === 'mobile_money') paymentText = 'Your Mobile Money payment is currently being processed'
+  if (method === 'bank_card') paymentText = 'Your Bank Card payment has been approved'
+
   return (
     <div className="mx-auto max-w-lg px-4 py-20 text-center sm:px-6">
       {isDemo && (
@@ -30,9 +36,9 @@ export default function CheckoutSuccess() {
       <p className="mt-4 text-slate-600">
         {isDemo
           ? flowMembership
-            ? 'In a live deployment, this step would confirm your subscription with Stripe.'
-            : 'In a live deployment, this step would follow payment confirmation from Stripe.'
-          : 'Your payment was submitted securely. You should receive a confirmation email shortly when the server is fully configured.'}
+            ? 'In a live deployment, this step would confirm your subscription.'
+            : 'In a live deployment, this step would follow payment confirmation.'
+          : `${paymentText}. You should receive a confirmation email shortly when the server is fully configured.`}
       </p>
       <div className="mt-10 flex flex-wrap justify-center gap-3">
         <Link

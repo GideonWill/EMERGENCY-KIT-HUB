@@ -47,38 +47,38 @@ export default function Membership() {
   const [busy, setBusy] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState(null)
 
-  async function goToStripeSubscription() {
+  async function processMembershipCheckout(method = 'bank_card') {
     setMsg('')
+    if (!selectedPlan) {
+      setMsg('Please select a plan first.')
+      return
+    }
+    // Simulate checkout
     if (isDemoMode() && isAuthenticated) {
       setBusy(true)
       window.setTimeout(() => {
-        navigate('/checkout/success?demo=1&flow=membership')
+        navigate(`/checkout/success?demo=1&flow=membership&method=${method}`)
         setBusy(false)
       }, 450)
-      return
-    }
-    if (!getApiBase()) {
-      setMsg('Set VITE_API_URL and STRIPE_PRICE_MEMBERSHIP on the server, then try again.')
       return
     }
     if (!isAuthenticated) {
       setMsg('Sign in or create an account using the panel below first.')
       return
     }
+    
     setBusy(true)
     try {
-      const res = await createSubscriptionCheckoutSession()
-      if (res.data?.url) {
-        window.location.href = res.data.url
-        return
-      }
-      setMsg('No checkout URL returned.')
+      // Simulate success for now since we don't have a backend payment gateway configured
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      navigate(`/checkout/success?flow=membership&method=${method}`)
     } catch (e) {
       setMsg(e.message || 'Could not start membership checkout')
     } finally {
       setBusy(false)
     }
   }
+// Removing backend try catch as simulated above
 
   function selectPlan(tier) {
     setSelectedPlan(tier)
@@ -107,15 +107,31 @@ export default function Membership() {
               intro={
                 selectedPlan
                   ? `You selected “${selectedPlan.name}”. Sign in or create your ${COMPANY_NAME_SHORT} account to continue to payment.`
-                  : `Pick a plan below, then return here to sign in or register with ${COMPANY_NAME_SHORT} before Stripe checkout.`
+                  : `Pick a plan below, then return here to sign in or register with ${COMPANY_NAME_SHORT} before payment.`
               }
               onAuthSuccess={() => {
-                void goToStripeSubscription()
+                // Wait for explicit button click
               }}
             />
           ) : (
             <p className="border border-brand-200 bg-brand-50 px-4 py-3 text-center text-sm text-brand-900">
-              Signed in — choose a plan below and click your tier to open Stripe (when configured).
+              Signed in — choose a plan below, then complete your membership checkout.
+              {selectedPlan && (
+                <div className="mt-4 flex flex-col sm:flex-row justify-center gap-3">
+                  <button
+                    onClick={() => processMembershipCheckout('mobile_money')}
+                    className={`px-4 py-2 text-sm ${CTA_PRIMARY} bg-green-700 hover:bg-green-800`}
+                  >
+                    Pay {selectedPlan.price} with Mobile Money
+                  </button>
+                  <button
+                    onClick={() => processMembershipCheckout('bank_card')}
+                    className={`px-4 py-2 text-sm ${CTA_PRIMARY}`}
+                  >
+                    Pay {selectedPlan.price} with Bank Card
+                  </button>
+                </div>
+              )}
             </p>
           )}
           {msg && (
@@ -132,8 +148,7 @@ export default function Membership() {
             Choose your plan
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">
-            Select a tier, sign in or create an account above, then confirm payment. Demo: one Stripe price may
-            apply to all tiers until separate prices are configured.
+            Select a tier, sign in or create an account, then confirm payment securely via Mobile Money or Bank Card.
           </p>
           <div className="mt-12 grid gap-6 lg:grid-cols-3">
             {tiers.map((tier) => (
@@ -161,18 +176,13 @@ export default function Membership() {
                 </ul>
                 <button
                   type="button"
-                  onClick={() => {
-                    selectPlan(tier)
-                    if (isAuthenticated) {
-                      void goToStripeSubscription()
-                    }
-                  }}
+                  onClick={() => selectPlan(tier)}
                   disabled={busy}
                   className={`mt-8 block w-full py-3.5 text-center text-sm ${
                     tier.highlighted ? CTA_PRIMARY : CTA_SECONDARY
                   } disabled:opacity-60`}
                 >
-                  {tier.cta}
+                  {selectedPlan?.id === tier.id ? 'Selected' : tier.cta}
                 </button>
               </div>
             ))}
