@@ -11,7 +11,7 @@ const tiers = [
   {
     id: 'essential',
     name: 'Essential',
-    price: '$29',
+    price: 'GH₵29',
     period: '/ month',
     blurb: 'Discounted supplements, early access to sales, and monthly wellness guides.',
     features: ['10% off supplements', 'Member-only articles', 'Email support'],
@@ -21,7 +21,7 @@ const tiers = [
   {
     id: 'care_plus',
     name: 'Care Plus',
-    price: '$79',
+    price: 'GH₵79',
     period: '/ month',
     blurb: 'Virtual consult credits, priority support, and personalized protocol suggestions.',
     features: ['2 consult credits / year', 'Priority routing', '20% off kits', 'Care coordinator'],
@@ -31,7 +31,7 @@ const tiers = [
   {
     id: 'family',
     name: 'Family',
-    price: '$129',
+    price: 'GH₵129',
     period: '/ month',
     blurb: 'Cover your household with shared benefits and emergency-prep checklists.',
     features: ['Up to 4 profiles', 'Quarterly planning calls', '25% off emergency kits'],

@@ -31,7 +31,7 @@ export default function ProductCard({ product }) {
         </Link>
         <p className="mt-1 flex-1 text-sm leading-relaxed text-slate-600">{tagline}</p>
         <div className="mt-4 flex items-center justify-between gap-3">
-          <p className="text-lg font-semibold text-slate-900">${price.toFixed(2)}</p>
+          <p className="text-lg font-semibold text-slate-900">GH₵{price.toFixed(2)}</p>
           <Link
             to={`/product/${id}`}
             className={`px-4 py-2 text-sm ${CTA_PRIMARY}`}

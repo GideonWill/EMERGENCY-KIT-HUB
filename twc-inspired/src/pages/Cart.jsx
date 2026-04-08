@@ -109,7 +109,7 @@ export default function Cart() {
             )}
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-slate-900">{line.name}</p>
-              <p className="text-sm text-slate-600">${line.price.toFixed(2)} each</p>
+              <p className="text-sm text-slate-600">GH₵{line.price.toFixed(2)} each</p>
             </div>
             <div className="flex items-center gap-2">
               <label htmlFor={`qty-${line.id}`} className="sr-only">
@@ -126,7 +126,7 @@ export default function Cart() {
               />
             </div>
             <p className="w-24 text-right font-semibold text-slate-900">
-              ${(line.price * line.quantity).toFixed(2)}
+              GH₵{(line.price * line.quantity).toFixed(2)}
             </p>
             <button
               type="button"
@@ -140,7 +140,7 @@ export default function Cart() {
       </ul>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6">
-        <p className="text-lg font-semibold text-slate-900">Total: ${total.toFixed(2)}</p>
+        <p className="text-lg font-semibold text-slate-900">Total: GH₵{total.toFixed(2)}</p>
         <div className="flex flex-wrap gap-3">
           <button
             type="button"

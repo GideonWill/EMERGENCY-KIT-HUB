@@ -104,8 +104,8 @@ export default function ProductDetails() {
             <p className="mt-2 text-lg text-brand-800">{tagline}</p>
 
             <div className="mt-6 flex flex-wrap items-baseline gap-3 border-b border-slate-200 pb-6">
-              <span className="text-3xl font-semibold tracking-tight text-slate-900">${price.toFixed(2)}</span>
-              <span className="text-sm text-slate-500">USD · Demo pricing</span>
+              <span className="text-3xl font-semibold tracking-tight text-slate-900">GH₵{price.toFixed(2)}</span>
+              <span className="text-sm text-slate-500">GHS · Demo pricing</span>
             </div>
 
             <ul className="mt-6 space-y-2 text-sm text-slate-700">
