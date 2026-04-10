@@ -183,7 +183,7 @@ export default function Navbar() {
             Contact
           </NavLink>
           <NavLink to="/tracking" className={navClass}>
-            Tracking
+            Track & Orders
           </NavLink>
         </nav>
 
@@ -388,7 +388,7 @@ export default function Navbar() {
               className="px-3 py-3 text-slate-800"
               onClick={() => setMobileOpen(false)}
             >
-              Tracking
+              Track & Orders
             </NavLink>
             <Link
               to="/cart"
