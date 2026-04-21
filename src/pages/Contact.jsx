@@ -1,8 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { CTA_PRIMARY, SUPPORT_EMAIL } from '../config/brand'
 
 export default function Contact() {
+  const [searchParams] = useSearchParams()
+  const initialTopic = searchParams.get('topic')
   const [sent, setSent] = useState(false)
+  const [topic, setTopic] = useState('General question')
+
+  useEffect(() => {
+    if (initialTopic === 'institutional') {
+      setTopic('Institutional / Corporate inquiry')
+    }
+  }, [initialTopic])
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -84,11 +94,14 @@ export default function Contact() {
                   <select
                     id="topic"
                     name="topic"
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
                     className="mt-1 w-full border border-slate-300 px-4 py-3 text-slate-900 outline-none ring-brand-600 focus:border-brand-600 focus:ring-2"
                   >
                     <option>General question</option>
                     <option>Order support</option>
                     <option>Membership</option>
+                    <option>Institutional / Corporate inquiry</option>
                     <option>Provider / clinical</option>
                   </select>
                 </div>

@@ -8,6 +8,7 @@ const footerColumns = [
       { to: '/shop', label: 'All products' },
       { to: '/shop?collection=bestsellers', label: 'Best sellers' },
       { to: '/membership', label: 'Membership' },
+      { to: '/institutional', label: 'Institutional solutions' },
     ],
   },
   {

@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { AcademicCapIcon, BuildingOfficeIcon, Cog6ToothIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
 import ProductCard from '../components/ProductCard'
 import ContentSection from '../components/ContentSection'
 import EmergencyKitHealthTips from '../components/EmergencyKitHealthTips'
 import EmergencyKitVideo from '../components/EmergencyKitVideo'
 import TrendingSpotlightTile from '../components/TrendingSpotlightTile'
-import { products, testimonials, team } from '../data/products'
+import { products as initialProducts, testimonials, team } from '../data/products'
 import { COMPANY_NAME, CTA_PRIMARY, CTA_SECONDARY } from '../config/brand'
 
 const collectionLinks = [
@@ -15,10 +17,29 @@ const collectionLinks = [
   { to: '/membership#plans', label: 'Memberships' },
 ]
 
-const featured = products.slice(0, 4)
-const spotlight = products.slice(0, 5)
+const spotlight = initialProducts.slice(0, 5)
 
 export default function Home() {
+  const [catalog, setCatalog] = useState(() => {
+    const saved = localStorage.getItem('admin_inventory')
+    return saved ? JSON.parse(saved) : initialProducts
+  })
+
+  useEffect(() => {
+    const syncInventory = () => {
+      const saved = localStorage.getItem('admin_inventory')
+      if (saved) setCatalog(JSON.parse(saved))
+    }
+    window.addEventListener('storage', syncInventory)
+    window.addEventListener('inventory_updated', syncInventory)
+    return () => {
+      window.removeEventListener('storage', syncInventory)
+      window.removeEventListener('inventory_updated', syncInventory)
+    }
+  }, [])
+
+  const currentSpotlight = catalog.slice(0, 5)
+  const currentFeatured = catalog.slice(0, 4)
   return (
     <>
       {/* Hero — copy left; image flush to right viewport edge on large screens */}
@@ -72,7 +93,7 @@ export default function Home() {
               Trending now
             </p>
             <div className="flex gap-4 overflow-x-auto overscroll-x-contain pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
-              {spotlight.map((p) => (
+              {currentSpotlight.map((p) => (
                 <TrendingSpotlightTile key={p.id} product={p} />
               ))}
             </div>
@@ -82,6 +103,59 @@ export default function Home() {
 
       <EmergencyKitHealthTips />
       <EmergencyKitVideo />
+
+      {/* Institutional / Corporate Solutions */}
+      <section className="bg-slate-50 py-16 sm:py-20 border-b border-slate-200">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="lg:flex lg:items-center lg:gap-16">
+            <div className="lg:max-w-xl">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand-700">Institutional Solutions</p>
+              <h2 className="mt-4 font-display text-3xl text-slate-900 sm:text-4xl lg:text-5xl leading-tight">
+                Standardizing safety for <span className="text-brand-800 italic font-medium">Schools &amp; Workplaces</span>
+              </h2>
+              <p className="mt-6 text-lg text-slate-600 leading-relaxed">
+                Beyond home care, {COMPANY_NAME} provides bulk emergency preparedness solutions for Ghanaian institutions. From customized kits for mining sites to first-aid stations for universities.
+              </p>
+              <div className="mt-10 flex flex-wrap gap-4">
+                <Link
+                  to="/institutional"
+                  className={`px-8 py-3 text-sm font-bold uppercase tracking-widest ${CTA_PRIMARY}`}
+                >
+                  Explore partnerships
+                </Link>
+                <Link
+                  to="/contact?topic=institutional"
+                  className="inline-flex items-center text-sm font-semibold text-brand-700 hover:text-brand-800 transition-colors"
+                >
+                  Request bulk quote <ArrowRightIcon className="ml-2 h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+            <div className="mt-12 lg:mt-0 flex-1 grid grid-cols-2 gap-4">
+              <div className="bg-white p-6 shadow-sm border border-slate-200/60 rounded-sm">
+                <AcademicCapIcon className="h-8 w-8 text-brand-600 mb-4" />
+                <h4 className="font-display text-lg text-slate-900">Schools</h4>
+                <p className="mt-2 text-sm text-slate-500">Student-safe kits and staff training modules.</p>
+              </div>
+              <div className="bg-white p-6 shadow-sm border border-slate-200/60 rounded-sm">
+                <BuildingOfficeIcon className="h-8 w-8 text-brand-600 mb-4" />
+                <h4 className="font-display text-lg text-slate-900">Corporate</h4>
+                <h5 className="text-[10px] uppercase font-bold text-brand-600 mt-1">Branding available</h5>
+                <p className="mt-2 text-sm text-slate-500">Employee wellness kits for office safety.</p>
+              </div>
+              <div className="bg-white p-6 shadow-sm border border-slate-200/60 rounded-sm col-span-2">
+                <div className="flex items-center gap-4">
+                  <Cog6ToothIcon className="h-10 w-10 text-brand-600" />
+                  <div>
+                    <h4 className="font-display text-lg text-slate-900">Industrial &amp; Mining</h4>
+                    <p className="mt-1 text-sm text-slate-500">Heavy-duty trauma kits compliant with safety standards.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Collections — text row */}
       <section className="border-b border-slate-200 bg-white py-5">
@@ -124,7 +198,7 @@ export default function Home() {
             </Link>
           </div>
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {featured.map((p) => (
+            {currentFeatured.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
           </div>
@@ -138,7 +212,7 @@ export default function Home() {
             New arrivals and spotlight formulas — tap through to product pages.
           </p>
           <div className="mt-10 grid gap-px bg-white/20 sm:grid-cols-2 lg:grid-cols-4">
-            {products.slice(2, 6).map((p) => (
+            {catalog.slice(2, 6).map((p) => (
               <Link
                 key={p.id}
                 to={`/product/${p.id}`}

@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import { getProductById, getGalleryImages, getRelatedProducts } from '../data/products'
+import { getProductById, getGalleryImages, getRelatedProducts, products as initialProducts } from '../data/products'
 import { useCart } from '../context/CartContext'
 import { COMPANY_NAME, CTA_PRIMARY, CTA_SECONDARY } from '../config/brand'
 
@@ -15,7 +15,25 @@ function ChevronRight({ className }) {
 
 export default function ProductDetails() {
   const { id } = useParams()
-  const product = getProductById(id)
+  const [catalog, setCatalog] = useState(() => {
+    const saved = localStorage.getItem('admin_inventory')
+    return saved ? JSON.parse(saved) : initialProducts
+  })
+
+  useEffect(() => {
+    const syncInventory = () => {
+      const saved = localStorage.getItem('admin_inventory')
+      if (saved) setCatalog(JSON.parse(saved))
+    }
+    window.addEventListener('storage', syncInventory)
+    window.addEventListener('inventory_updated', syncInventory)
+    return () => {
+      window.removeEventListener('storage', syncInventory)
+      window.removeEventListener('inventory_updated', syncInventory)
+    }
+  }, [])
+
+  const product = catalog.find(p => String(p.id) === String(id))
   const [activeIdx, setActiveIdx] = useState(0)
   const [qty, setQty] = useState(1)
   const [subscription, setSubscription] = useState('one-time')
@@ -33,10 +51,10 @@ export default function ProductDetails() {
     )
   }
 
-  const { name, price, tagline, rating, reviews, description, highlights, badge } = product
+  const { name, price, tagline, rating, reviews, description, highlights, badge, status } = product
   const gallery = getGalleryImages(product)
   const activeImage = gallery[activeIdx] ?? gallery[0]
-  const related = getRelatedProducts(product.id)
+  const related = catalog.filter(p => p.id !== product.id).slice(0, 4)
 
   return (
     <div className="bg-white">
@@ -65,7 +83,14 @@ export default function ProductDetails() {
                   {badge}
                 </span>
               )}
-              <img src={activeImage} alt="" className="aspect-square w-full object-contain" />
+              {status && status !== 'In Stock' && (
+                <span className={`absolute right-0 top-0 z-10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white shadow-sm ${
+                  status === 'Out of Stock' ? 'bg-red-600' : 'bg-amber-600'
+                }`}>
+                  {status}
+                </span>
+              )}
+              <img src={activeImage} alt="" className={`aspect-square w-full object-contain ${status === 'Out of Stock' ? 'opacity-40 grayscale' : ''}`} />
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {gallery.map((src, i) => (
@@ -204,7 +229,9 @@ export default function ProductDetails() {
               </div>
               <button
                 type="button"
+                disabled={status === 'Out of Stock'}
                 onClick={() => {
+                  if (status === 'Out of Stock') return
                   const finalPrice = subscription === 'refill' ? product.price * 0.9 : product.price
                   const displayName = subscription === 'refill' ? `${product.name} (Refill Subscription)` : product.name
                   
@@ -220,9 +247,9 @@ export default function ProductDetails() {
                   setAddedMsg(`Added ${qty} × ${displayName} to your cart.`)
                   setQty(1)
                 }}
-                className={`flex-1 py-4 text-sm font-bold uppercase tracking-wide ${CTA_PRIMARY}`}
+                className={`flex-1 py-4 text-sm font-bold uppercase tracking-wide ${status === 'Out of Stock' ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : CTA_PRIMARY}`}
               >
-                Add to cart
+                {status === 'Out of Stock' ? 'Out of Stock' : 'Add to cart'}
               </button>
             </div>
 

@@ -10,6 +10,7 @@ import Consultation from './pages/Consultation'
 import SpiritualGuidance from './pages/SpiritualGuidance'
 import WellnessHub from './pages/WellnessHub'
 import Manual from './pages/Manual'
+import Institutional from './pages/Institutional'
 import Cart from './pages/Cart'
 import CheckoutSuccess from './pages/CheckoutSuccess'
 import Login from './pages/Login'
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/wellness" element={<WellnessHub />} />
         <Route path="/manual" element={<Manual />} />
         <Route path="/spiritual-guidance" element={<SpiritualGuidance />} />
+        <Route path="/institutional" element={<Institutional />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout/success" element={<CheckoutSuccess />} />
         <Route path="/login" element={<Login />} />

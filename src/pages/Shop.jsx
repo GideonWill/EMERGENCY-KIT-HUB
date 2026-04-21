@@ -1,22 +1,39 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import { products } from '../data/products'
+import { products as initialProducts } from '../data/products'
 
 export default function Shop() {
   const [params] = useSearchParams()
   const collection = params.get('collection')
+  const [catalog, setCatalog] = useState(() => {
+    const saved = localStorage.getItem('admin_inventory')
+    return saved ? JSON.parse(saved) : initialProducts
+  })
+
+  useEffect(() => {
+    const syncInventory = () => {
+      const saved = localStorage.getItem('admin_inventory')
+      if (saved) setCatalog(JSON.parse(saved))
+    }
+    window.addEventListener('storage', syncInventory)
+    window.addEventListener('inventory_updated', syncInventory)
+    return () => {
+      window.removeEventListener('storage', syncInventory)
+      window.removeEventListener('inventory_updated', syncInventory)
+    }
+  }, [])
 
   const filtered = useMemo(() => {
-    if (!collection) return products
+    if (!collection) return catalog
     if (collection === 'bestsellers') {
-      return products.filter((p) => p.badge === 'Best Seller')
+      return catalog.filter((p) => p.badge === 'Best Seller')
     }
     if (collection === 'supplements') {
-      return products.filter((p) => !p.id.includes('emergency') && !p.id.includes('kit'))
+      return catalog.filter((p) => !String(p.id).includes('emergency') && !String(p.id).includes('kit'))
     }
-    return products
-  }, [collection])
+    return catalog
+  }, [collection, catalog])
 
   const title =
     collection === 'bestsellers'

@@ -12,10 +12,19 @@ export default function ProductCard({ product }) {
             {badge}
           </span>
         )}
+        {product.status && product.status !== 'In Stock' && (
+          <span className={`absolute right-0 top-0 z-10 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white ${
+            product.status === 'Out of Stock' ? 'bg-red-600' : 'bg-amber-600'
+          }`}>
+            {product.status}
+          </span>
+        )}
         <img
           src={image}
           alt=""
-          className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
+          className={`h-full w-full object-contain transition duration-500 group-hover:scale-105 ${
+            product.status === 'Out of Stock' ? 'opacity-40 grayscale' : ''
+          }`}
         />
       </Link>
       <div className="flex flex-1 flex-col border-t border-slate-200 p-5">

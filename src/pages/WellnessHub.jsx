@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { BookOpenIcon, UserGroupIcon, SparklesIcon, ArrowPathIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
 import { CTA_PRIMARY, CTA_SECONDARY } from '../config/brand'
 
 export default function WellnessHub() {
@@ -7,28 +8,28 @@ export default function WellnessHub() {
       title: 'Digital Manual',
       description: 'Medical and natural first-aid guidance for home and office.',
       link: '/manual',
-      icon: '📚',
+      icon: BookOpenIcon,
       color: 'bg-brand-50'
     },
     {
       title: 'Clinical Care',
       description: 'Book virtual consultations with licensed medical professionals.',
       link: '/consultation',
-      icon: '🩺',
+      icon: UserGroupIcon,
       color: 'bg-blue-50'
     },
     {
       title: 'Spiritual Guidance',
       description: 'Access the Circle of Prayer and holistic wellness support.',
       link: '/spiritual-guidance',
-      icon: '🕊️',
+      icon: SparklesIcon,
       color: 'bg-amber-50'
     },
     {
       title: 'Restock & Refill',
       description: 'Manage your kit subscriptions and restocking alerts.',
       link: '/shop', // Update later if needed
-      icon: '📦',
+      icon: ArrowPathIcon,
       color: 'bg-green-50'
     }
   ]
@@ -60,7 +61,7 @@ export default function WellnessHub() {
               to={hub.link}
               className={`group flex flex-col p-10 ${hub.color} border border-transparent hover:border-slate-200 transition-all duration-300`}
             >
-              <span className="text-4xl mb-6">{hub.icon}</span>
+              <hub.icon className="h-10 w-10 text-brand-700 mb-6 group-hover:scale-110 transition-transform" />
               <h2 className="font-display text-3xl text-slate-900 mb-4 group-hover:text-brand-800 transition-colors">
                 {hub.title}
               </h2>
@@ -69,7 +70,7 @@ export default function WellnessHub() {
               </p>
               <span className="mt-auto text-sm font-bold uppercase tracking-widest text-brand-700 flex items-center gap-2">
                 Explore section
-                <span className="group-hover:translate-x-2 transition-transform">→</span>
+                <ArrowRightIcon className="h-4 w-4 group-hover:translate-x-2 transition-transform" />
               </span>
             </Link>
           ))}

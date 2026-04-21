@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { ChevronDownIcon, ShoppingCartIcon, UserIcon, UserPlusIcon, ArrowRightOnRectangleIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { COMPANY_NAME, CTA_PRIMARY, CTA_SECONDARY, LOGO_SRC } from '../config/brand'
@@ -18,6 +19,10 @@ const shopCollections = [
     hint: 'Daily wellness formulas',
   },
   { to: '/membership', label: 'Memberships', hint: 'Care & savings plans' },
+  { to: '/institutional', label: 'Institutional solutions', hint: 'Bulk care for organizations' },
+  { to: '/institutional#schools', label: 'Schools & Education', hint: 'Campus safety solutions' },
+  { to: '/institutional#corporate', label: 'Workplaces & Offices', hint: 'Employee wellness kits' },
+  { to: '/institutional#industrial', label: 'Industrial & Mining', hint: 'Heavy-duty trauma kits' },
 ]
 
 const navClass = ({ isActive }) =>
@@ -26,14 +31,6 @@ const navClass = ({ isActive }) =>
       ? 'text-brand-700 font-semibold'
       : 'text-slate-600 hover:text-brand-700 transition-colors'
   }`
-
-function ChevronDown({ className }) {
-  return (
-    <svg className={className} width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-    </svg>
-  )
-}
 
 export default function Navbar() {
   const { count: cartCount } = useCart()
@@ -85,7 +82,7 @@ export default function Navbar() {
               aria-haspopup="true"
             >
               Shop
-              <ChevronDown className={`h-4 w-4 shrink-0 transition-transform duration-200 ${shopOpen ? 'rotate-180' : ''}`} />
+              <ChevronDownIcon className={`h-4 w-4 shrink-0 transition-transform duration-200 ${shopOpen ? 'rotate-180' : ''}`} />
             </button>
 
             <div
@@ -160,7 +157,7 @@ export default function Navbar() {
               aria-expanded={careOpen}
             >
               Care & Knowledge
-              <ChevronDown className={`h-4 w-4 shrink-0 transition-transform duration-200 ${careOpen ? 'rotate-180' : ''}`} />
+              <ChevronDownIcon className={`h-4 w-4 shrink-0 transition-transform duration-200 ${careOpen ? 'rotate-180' : ''}`} />
             </button>
             <div className={`absolute left-0 right-0 top-full z-50 mx-auto w-[min(calc(100vw-2rem),28rem)] border-t-2 border-brand-600 bg-white shadow-xl transition-all duration-150 ${
                 careOpen ? 'visible opacity-100 translate-y-0' : 'invisible opacity-0 translate-y-1'
@@ -291,9 +288,7 @@ export default function Navbar() {
                   className="p-2 text-slate-700 hover:text-brand-700"
                   aria-label="Admin Portal"
                 >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <UserIcon className="h-5 w-5" />
                 </Link>
               )}
               <button
@@ -302,22 +297,16 @@ export default function Navbar() {
                 className="p-2 text-slate-700 hover:text-brand-700"
                 aria-label="Sign out"
               >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
+                <ArrowRightOnRectangleIcon className="h-5 w-5" />
               </button>
             </div>
           ) : (
             <div className="flex items-center gap-1 pr-1 border-r border-slate-300">
               <Link to="/login" className="p-2 text-slate-700 hover:text-brand-700" aria-label="Login">
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                </svg>
+                <UserIcon className="h-5 w-5" />
               </Link>
               <Link to="/register" className="p-2 text-slate-700 hover:text-brand-700" aria-label="Sign up">
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                </svg>
+                <UserPlusIcon className="h-5 w-5" />
               </Link>
             </div>
           )}
@@ -326,9 +315,7 @@ export default function Navbar() {
             className="group relative p-2 text-slate-700 hover:text-brand-700"
             aria-label="Cart"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
+            <ShoppingCartIcon className="h-5 w-5" />
             {cartCount > 0 && (
               <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-600 px-1 text-[9px] font-bold text-white">
                 {cartCount > 99 ? '99+' : cartCount}
@@ -343,13 +330,9 @@ export default function Navbar() {
             onClick={() => setMobileOpen((o) => !o)}
           >
             {mobileOpen ? (
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <XMarkIcon className="h-6 w-6" />
             ) : (
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+              <Bars3Icon className="h-6 w-6" />
             )}
           </button>
         </div>

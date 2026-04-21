@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { manualEntries, firstAidCategories } from '../data/manualData'
 import { CTA_PRIMARY } from '../config/brand'
 
@@ -23,11 +24,12 @@ export default function Manual() {
             Instant guidance for clinical and natural first aid. Expert-informed steps to keep your family safe until professional help arrives.
           </p>
           
-          <div className="mt-10 max-w-xl">
+          <div className="mt-10 max-w-xl relative">
+            <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-brand-200" />
             <input
               type="text"
               placeholder="Search for an emergency (e.g., Burns, Choking)..."
-              className="w-full px-6 py-4 rounded-full bg-white/10 border border-white/20 text-white placeholder-brand-200 focus:outline-none focus:ring-2 focus:ring-brand-400 backdrop-blur-sm"
+              className="w-full pl-12 pr-6 py-4 rounded-full bg-white/10 border border-white/20 text-white placeholder-brand-200 focus:outline-none focus:ring-2 focus:ring-brand-400 backdrop-blur-sm"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

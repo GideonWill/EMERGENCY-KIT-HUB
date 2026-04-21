@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { CTA_PRIMARY } from '../config/brand'
+import { InboxStackIcon, ArchiveBoxIcon, UsersIcon, ChartBarIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { products as initialProducts } from '../data/products'
+import { CTA_PRIMARY, CTA_SECONDARY } from '../config/brand'
 
 const mockOrders = [
   {
@@ -63,9 +65,28 @@ export default function AdminDashboard() {
     localStorage.setItem('admin_orders', JSON.stringify(mockOrders))
     return mockOrders
   })
+
+  const [inventory, setInventory] = useState(() => {
+    const saved = localStorage.getItem('admin_inventory')
+    if (saved) return JSON.parse(saved)
+    localStorage.setItem('admin_inventory', JSON.stringify(initialProducts))
+    return initialProducts
+  })
   
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [activeTab, setActiveTab] = useState('orders')
+  const [newProduct, setNewProduct] = useState({ name: '', price: '', category: '', status: 'In Stock', image: null })
+
+  // Sync back status updates to localStorage
+  useEffect(() => {
+    localStorage.setItem('admin_orders', JSON.stringify(orders))
+  }, [orders])
+
+  useEffect(() => {
+    localStorage.setItem('admin_inventory', JSON.stringify(inventory))
+    // Dispatch event for other tabs to update
+    window.dispatchEvent(new Event('inventory_updated'))
+  }, [inventory])
 
   // Listen for real-time orders globally (from same tab CustomEvent or cross-tab storage event)
   useEffect(() => {
@@ -73,6 +94,10 @@ export default function AdminDashboard() {
       const saved = localStorage.getItem('admin_orders')
       if (saved) {
         setOrders(JSON.parse(saved))
+      }
+      const savedInv = localStorage.getItem('admin_inventory')
+      if (savedInv) {
+        setInventory(JSON.parse(savedInv))
       }
     }
     window.addEventListener('storage', handleStorageUpdate)
@@ -83,11 +108,6 @@ export default function AdminDashboard() {
     }
   }, [])
 
-  // Sync back status updates to localStorage
-  useEffect(() => {
-    localStorage.setItem('admin_orders', JSON.stringify(orders))
-  }, [orders])
-
   const calcTotal = (items) => items.reduce((sum, item) => sum + (item.qty * item.price), 0)
 
   const updateStatus = (id, newStatus) => {
@@ -97,11 +117,55 @@ export default function AdminDashboard() {
     }
   }
 
+  const updateProductStatus = (id, status) => {
+    setInventory(inventory.map(p => p.id === id ? { ...p, status } : p))
+  }
+
+  const deleteProduct = (id) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      setInventory(inventory.filter(p => p.id !== id))
+    }
+  }
+
+  const addProduct = (e) => {
+    e.preventDefault()
+    if (!newProduct.name || !newProduct.price) return
+    const id = Date.now()
+    const product = { 
+      ...newProduct, 
+      id, 
+      price: parseFloat(newProduct.price),
+      image: newProduct.image || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&q=80',
+      tagline: 'New addition to catalog',
+      rating: 5,
+      reviews: 0
+    }
+    setInventory([...inventory, product])
+    setNewProduct({ name: '', price: '', category: '', status: 'In Stock', image: null })
+  }
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setNewProduct({ ...newProduct, image: reader.result })
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const statusColors = {
     'Pending': 'bg-amber-100 text-amber-800',
     'Processing': 'bg-blue-100 text-blue-800',
     'Shipped': 'bg-purple-100 text-purple-800',
     'Delivered': 'bg-green-100 text-green-800'
+  }
+
+  const stockStatusColors = {
+    'In Stock': 'bg-green-100 text-green-800',
+    'Out of Stock': 'bg-red-100 text-red-800',
+    'Restocking Soon': 'bg-amber-100 text-amber-800'
   }
 
   return (
@@ -117,7 +181,10 @@ export default function AdminDashboard() {
             onClick={() => { setActiveTab('orders'); setSelectedOrder(null); }}
             className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition font-medium ${activeTab === 'orders' ? 'bg-brand-600 text-white' : 'hover:bg-slate-800 hover:text-white'}`}
           >
-            <span>📦 Orders</span>
+            <div className="flex items-center gap-3">
+              <InboxStackIcon className="w-5 h-5" />
+              <span>Orders</span>
+            </div>
             {orders.filter(o => o.status === 'Pending').length > 0 && (
               <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                 {orders.filter(o => o.status === 'Pending').length}
@@ -125,21 +192,30 @@ export default function AdminDashboard() {
             )}
           </button>
           <button 
-            onClick={() => { setActiveTab('customers'); setSelectedOrder(null); }}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition font-medium ${activeTab === 'customers' ? 'bg-brand-600 text-white' : 'hover:bg-slate-800 hover:text-white'}`}
+            onClick={() => { setActiveTab('inventory'); setSelectedOrder(null); }}
+            className={`w-full flex items-center justify-start gap-3 px-3 py-2 rounded-md transition font-medium ${activeTab === 'inventory' ? 'bg-brand-600 text-white' : 'hover:bg-slate-800 hover:text-white'}`}
           >
-             👥 Customers
+             <ArchiveBoxIcon className="w-5 h-5" />
+             <span>Inventory</span>
+          </button>
+          <button 
+            onClick={() => { setActiveTab('customers'); setSelectedOrder(null); }}
+            className={`w-full flex items-center justify-start gap-3 px-3 py-2 rounded-md transition font-medium ${activeTab === 'customers' ? 'bg-brand-600 text-white' : 'hover:bg-slate-800 hover:text-white'}`}
+          >
+             <UsersIcon className="w-5 h-5" />
+             <span>Customers</span>
           </button>
           <button 
             onClick={() => { setActiveTab('analytics'); setSelectedOrder(null); }}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition font-medium ${activeTab === 'analytics' ? 'bg-brand-600 text-white' : 'hover:bg-slate-800 hover:text-white'}`}
+            className={`w-full flex items-center justify-start gap-3 px-3 py-2 rounded-md transition font-medium ${activeTab === 'analytics' ? 'bg-brand-600 text-white' : 'hover:bg-slate-800 hover:text-white'}`}
           >
-             📊 Analytics
+             <ChartBarIcon className="w-5 h-5" />
+             <span>Analytics</span>
           </button>
         </nav>
         <div className="p-4 border-t border-slate-800">
-          <Link to="/" className="text-sm text-slate-400 hover:text-white transition flex items-center gap-2">
-            ← Back to Store
+          <Link to="/shop" className="text-sm text-slate-400 hover:text-white transition flex items-center gap-2">
+            <ArrowLeftIcon className="w-4 h-4" /> Back to Store
           </Link>
         </div>
       </div>
@@ -182,28 +258,122 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {activeTab === 'analytics' && (
+        {activeTab === 'inventory' && (
           <div className="p-4 sm:p-8">
-            <h1 className="text-2xl font-display text-slate-900">Analytics & Sales</h1>
-            <p className="text-sm text-slate-600 mt-1 mb-8">Metrics across all regions over the last 30 days.</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white border border-slate-200 shadow-sm p-6 text-center">
-                <p className="text-xs uppercase tracking-wider text-slate-500 font-bold">Total Dispatched</p>
-                <p className="text-3xl font-display text-brand-700 mt-2">
-                   {orders.filter(o => o.status === 'Shipped' || o.status === 'Delivered').length} orders
-                </p>
+            <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-display text-slate-900">Inventory Management</h1>
+                <p className="text-sm text-slate-600 mt-1">Add, remove, and update product availability for clients.</p>
               </div>
-              <div className="bg-white border border-slate-200 shadow-sm p-6 text-center">
-                <p className="text-xs uppercase tracking-wider text-slate-500 font-bold">Pending Fulfillment</p>
-                <p className="text-3xl font-display text-amber-600 mt-2">
-                  {orders.filter(o => o.status === 'Pending').length} orders
-                </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Product List */}
+              <div className="lg:col-span-2 bg-white border border-slate-200 shadow-sm overflow-x-auto">
+                <table className="w-full text-left whitespace-nowrap">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    <tr>
+                      <th className="px-6 py-4">Product</th>
+                      <th className="px-6 py-4 text-center">Status</th>
+                      <th className="px-6 py-4 text-right">Price (GH₵)</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-sm">
+                    {inventory.map(product => (
+                      <tr key={product.id} className="hover:bg-slate-50 transition">
+                        <td className="px-6 py-4">
+                          <p className="font-semibold text-slate-800">{product.name}</p>
+                          <p className="text-xs text-slate-500">{product.category}</p>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <select 
+                            value={product.status || 'In Stock'}
+                            onChange={(e) => updateProductStatus(product.id, e.target.value)}
+                            className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider outline-none border-none ${stockStatusColors[product.status || 'In Stock']}`}
+                          >
+                            <option value="In Stock">In Stock</option>
+                            <option value="Out of Stock">Out of Stock</option>
+                            <option value="Restocking Soon">Restocking Soon</option>
+                          </select>
+                        </td>
+                        <td className="px-6 py-4 text-right font-semibold text-slate-900">
+                          {product.price.toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button 
+                            onClick={() => deleteProduct(product.id)}
+                            className="text-red-600 font-medium hover:underline"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="bg-white border border-slate-200 shadow-sm p-6 text-center">
-                <p className="text-xs uppercase tracking-wider text-slate-500 font-bold">Gross Revenue</p>
-                <p className="text-3xl font-display text-slate-900 mt-2">
-                  GH₵ {orders.reduce((acc, order) => acc + calcTotal(order.items), 0).toLocaleString()}
-                </p>
+
+              {/* Add Product Form */}
+              <div className="bg-white border border-slate-200 shadow-sm p-6 h-fit">
+                <h3 className="font-display text-xl text-slate-900 mb-6">Add New Product</h3>
+                <form onSubmit={addProduct} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Product Name</label>
+                    <input 
+                      type="text" 
+                      value={newProduct.name}
+                      onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 text-sm focus:border-brand-600 focus:ring-1 focus:ring-brand-600"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Price (GH₵)</label>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      value={newProduct.price}
+                      onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 text-sm focus:border-brand-600 focus:ring-1 focus:ring-brand-600"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
+                    <select 
+                      value={newProduct.category}
+                      onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 text-sm focus:border-brand-600 focus:ring-1 focus:ring-brand-600"
+                      required
+                    >
+                      <option value="">Select Category</option>
+                      <option value="Medical kit">Medical kit</option>
+                      <option value="Supplement">Supplement</option>
+                      <option value="Wellness">Wellness</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Product Image</label>
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="w-full px-3 py-2 border border-slate-300 text-sm focus:border-brand-600 focus:ring-1 focus:ring-brand-600 file:mr-4 file:py-1.5 file:px-3 file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200"
+                    />
+                    {newProduct.image && (
+                      <div className="mt-2 h-20 w-20 overflow-hidden border border-slate-200">
+                        <img src={newProduct.image} alt="Preview" className="h-full w-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                  <button 
+                    type="submit"
+                    className={`w-full py-3 text-sm font-bold uppercase tracking-widest ${CTA_PRIMARY}`}
+                  >
+                    Add Product
+                  </button>
+                </form>
               </div>
             </div>
           </div>
