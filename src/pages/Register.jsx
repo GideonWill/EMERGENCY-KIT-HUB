@@ -34,10 +34,8 @@ export default function Register() {
       await register({ email, password, firstName, lastName, phone, rememberMe })
       navigate('/', { replace: true })
     } catch (err) {
-      if (err.code === 'auth/email-already-in-use') {
+      if (err.message === 'Email already registered') {
         setError('An account with this email already exists.')
-      } else if (err.code === 'auth/weak-password') {
-        setError('Password is too weak. Please use at least 6 characters.')
       } else {
         setError(err.message || 'Registration failed. Please try again.')
       }
@@ -62,7 +60,7 @@ export default function Register() {
           )}
         <form onSubmit={handleSubmit} className="mt-10 space-y-5">
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 shadow-sm" role="alert">
+            <div className="rounded-none border border-red-200 bg-red-50 p-4 text-sm text-red-800 shadow-sm" role="alert">
               <p className="flex items-center gap-2">
                 <span className="text-red-500 text-lg">⚠</span> {error}
               </p>
@@ -79,7 +77,7 @@ export default function Register() {
                 required
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
+                className="mt-2 w-full rounded-none border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
               />
             </div>
             <div>
@@ -92,7 +90,7 @@ export default function Register() {
                 required
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
+                className="mt-2 w-full rounded-none border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
               />
             </div>
           </div>
@@ -136,7 +134,7 @@ export default function Register() {
                   minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3.5 pr-12 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
+                  className="w-full rounded-none border border-slate-200 px-4 py-3.5 pr-12 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
                 />
                 <button
                   type="button"
@@ -164,7 +162,7 @@ export default function Register() {
                   minLength={8}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
+                  className="w-full rounded-none border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
                 />
               </div>
             </div>
@@ -186,7 +184,7 @@ export default function Register() {
           <button
             type="submit"
             disabled={submitting}
-            className={`w-full rounded-xl py-4 text-sm font-semibold active:scale-[0.98] transition-all duration-200 ${CTA_PRIMARY} shadow-lg shadow-brand-500/30 hover:shadow-brand-500/40`}
+            className={`w-full rounded-none py-4 text-sm font-semibold active:scale-[0.98] transition-all duration-200 ${CTA_PRIMARY} shadow-lg shadow-brand-500/30 hover:shadow-brand-500/40`}
           >
             {submitting ? 'Creating account…' : 'Create account'}
           </button>

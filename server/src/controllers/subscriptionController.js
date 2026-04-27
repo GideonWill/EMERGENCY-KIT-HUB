@@ -28,10 +28,10 @@ export const createSubscriptionCheckout = asyncHandler(async (req, res) => {
     success_url: process.env.STRIPE_SUCCESS_URL || `${process.env.CLIENT_URL}/?subscription=success`,
     cancel_url: process.env.STRIPE_CANCEL_URL || `${process.env.CLIENT_URL}/membership?checkout=cancel`,
     metadata: {
-      userId: req.user._id.toString(),
+      userId: String(req.user._id),
     },
     subscription_data: {
-      metadata: { userId: req.user._id.toString() },
+      metadata: { userId: String(req.user._id) },
     },
   })
   res.json({
@@ -41,6 +41,6 @@ export const createSubscriptionCheckout = asyncHandler(async (req, res) => {
 })
 
 export const listMySubscriptions = asyncHandler(async (req, res) => {
-  const subs = await Subscription.find({ user: req.user._id }).sort({ createdAt: -1 }).lean()
+  const subs = await Subscription.findByUser(req.user._id)
   res.json({ success: true, data: subs })
 })

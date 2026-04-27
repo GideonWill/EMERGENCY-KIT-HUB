@@ -1,5 +1,5 @@
 /**
- * Presentation / simulation mode: login and checkout run locally without API or Stripe.
+ * Presentation / simulation mode: login and checkout run locally without API or Paystack.
  * Set VITE_DEMO_MODE=true in `.env` and restart Vite for stakeholder demos.
  */
 export function isDemoMode() {

@@ -10,9 +10,9 @@ router.post(
   protect,
   [
     body('items').isArray({ min: 1 }),
-    body('items.*.productId').isMongoId(),
+    body('items.*.productId').exists(),
     body('items.*.quantity').isInt({ min: 1, max: 99 }),
-    body('shippingSnapshot').optional().isObject(),
+    body('shippingSnapshot').optional(),
   ],
   createCheckoutSession
 )

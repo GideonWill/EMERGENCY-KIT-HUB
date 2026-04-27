@@ -26,7 +26,7 @@ export default function Login() {
       await login(email, password, rememberMe)
       navigate(next.startsWith('/') ? next : '/', { replace: true })
     } catch (err) {
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+      if (err.message === 'Invalid email or password') {
         setError('Incorrect email or password. Please try again.')
       } else {
         setError(err.message || 'Login failed. Please verify your credentials and try again.')
@@ -66,14 +66,14 @@ export default function Login() {
           )}
         <form onSubmit={handleSubmit} className="mt-10 space-y-5">
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 shadow-sm" role="alert">
+            <div className="rounded-none border border-red-200 bg-red-50 p-4 text-sm text-red-800 shadow-sm" role="alert">
               <p className="flex items-center gap-2">
                 <span className="text-red-500 text-lg">⚠</span> {error}
               </p>
             </div>
           )}
           {resetMessage && (
-            <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800 shadow-sm" role="alert">
+            <div className="rounded-none border border-green-200 bg-green-50 p-4 text-sm text-green-800 shadow-sm" role="alert">
               <p className="flex items-center gap-2">
                 <span className="text-green-500 text-lg">✓</span> {resetMessage}
               </p>
@@ -90,7 +90,7 @@ export default function Login() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
+              className="mt-2 w-full rounded-none border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
             />
           </div>
           <div>
@@ -114,7 +114,7 @@ export default function Login() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-3.5 pr-14 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
+                className="w-full rounded-none border border-slate-200 px-4 py-3.5 pr-14 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
               />
               <button
                 type="button"
@@ -148,7 +148,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={submitting}
-            className={`w-full rounded-xl py-4 text-sm font-semibold active:scale-[0.98] transition-all duration-200 ${CTA_PRIMARY} shadow-lg shadow-brand-500/30 hover:shadow-brand-500/40`}
+            className={`w-full rounded-none py-4 text-sm font-semibold active:scale-[0.98] transition-all duration-200 ${CTA_PRIMARY} shadow-lg shadow-brand-500/30 hover:shadow-brand-500/40`}
           >
             {submitting ? 'Signing in…' : 'Sign in to your account'}
           </button>

@@ -8,6 +8,7 @@ import EmergencyKitVideo from '../components/EmergencyKitVideo'
 import TrendingSpotlightTile from '../components/TrendingSpotlightTile'
 import { products as initialProducts, testimonials, team } from '../data/products'
 import { COMPANY_NAME, CTA_PRIMARY, CTA_SECONDARY } from '../config/brand'
+import { apiFetch } from '../lib/api'
 
 const collectionLinks = [
   { to: '/shop?collection=bestsellers', label: 'Best sellers' },
@@ -20,26 +21,35 @@ const collectionLinks = [
 const spotlight = initialProducts.slice(0, 5)
 
 export default function Home() {
-  const [catalog, setCatalog] = useState(() => {
-    const saved = localStorage.getItem('admin_inventory')
-    return saved ? JSON.parse(saved) : initialProducts
-  })
+  const [catalog, setCatalog] = useState([])
 
   useEffect(() => {
-    const syncInventory = () => {
-      const saved = localStorage.getItem('admin_inventory')
-      if (saved) setCatalog(JSON.parse(saved))
+    async function loadCatalog() {
+      try {
+        const res = await apiFetch('/api/products')
+        if (res.success && res.data) {
+          const merged = res.data.map((p) => {
+            const staticMatch = initialProducts.find((sp) => sp.slug === p.slug || String(sp.id) === String(p.id))
+            return {
+              ...staticMatch,
+              ...p,
+              price: p.priceCents ? p.priceCents / 100 : (staticMatch?.price || 0),
+              tagline: staticMatch?.tagline || 'Premium wellness support.',
+            }
+          })
+          setCatalog(merged)
+        }
+      } catch (err) {
+        console.error('Failed to load catalog:', err)
+        setCatalog(initialProducts) // Fallback for UI purposes
+      }
     }
-    window.addEventListener('storage', syncInventory)
-    window.addEventListener('inventory_updated', syncInventory)
-    return () => {
-      window.removeEventListener('storage', syncInventory)
-      window.removeEventListener('inventory_updated', syncInventory)
-    }
+    loadCatalog()
   }, [])
 
-  const currentSpotlight = catalog.slice(0, 5)
-  const currentFeatured = catalog.slice(0, 4)
+  const currentSpotlight = catalog.length ? catalog.slice(0, 5) : initialProducts.slice(0, 5)
+  const currentFeatured = catalog.length ? catalog.slice(0, 4) : initialProducts.slice(0, 4)
+
   return (
     <>
       {/* Hero — copy left; image flush to right viewport edge on large screens */}

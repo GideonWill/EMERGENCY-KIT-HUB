@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom'
 
 /** Trending product cards — fixed square image area for consistent layout */
 export default function TrendingSpotlightTile({ product }) {
-  const { id, name, price, image, rating, reviews, status } = product
+  const { id, name, image, rating = 4.9, reviews = 120, status } = product
+  const price = product.price ?? (product.priceCents ? product.priceCents / 100 : 0)
 
   return (
     <Link

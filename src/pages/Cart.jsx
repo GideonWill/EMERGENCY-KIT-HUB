@@ -19,7 +19,7 @@ export default function Cart() {
 
   const [paymentMethod, setPaymentMethod] = useState('bank_card') // 'bank_card' or 'mobile_money'
 
-  async function processCheckout(method) {
+  async function processCheckout() {
     setMsg('')
     if (!lines.length) return
     if (!isAuthenticated) {
@@ -29,15 +29,37 @@ export default function Cart() {
 
     setBusy(true)
     try {
-      // Simulate checking products against the backend
+      // 1) Verify products against the backend
+      const itemsPayload = []
       if (getApiBase()) {
         const catalog = await apiFetch('/api/products').catch(() => null)
         if (catalog && catalog.data) {
           const bySlug = new Map(catalog.data.map((p) => [p.slug, p]))
+          const byId = new Map(catalog.data.map((p) => [p.id, p]))
+
           for (const line of lines) {
-            const slug = FRONTEND_ID_TO_API_SLUG[line.id]
-            if (slug && !bySlug.has(slug)) {
-              setMsg(`Product slug "${slug}" not found in API. Run npm run seed.`)
+            // 1. Try static mapping for initial products
+            const mappedSlug = FRONTEND_ID_TO_API_SLUG[line.id]
+            let dbProduct = mappedSlug ? bySlug.get(mappedSlug) : null
+            
+            // 2. If not found, try direct ID lookup (for new Admin products)
+            if (!dbProduct) {
+              dbProduct = byId.get(line.id) || byId.get(Number(line.id))
+            }
+            
+            // 3. Last resort: try direct slug lookup
+            if (!dbProduct) {
+              dbProduct = bySlug.get(line.id)
+            }
+            
+            if (dbProduct) {
+              itemsPayload.push({
+                productId: dbProduct.id,
+                quantity: Number(line.quantity)
+              })
+            } else {
+              console.error(`Product not found in database for id/slug: ${line.id}`)
+              setMsg(`Product "${line.name}" is currently unavailable for checkout.`)
               setBusy(false)
               return
             }
@@ -45,38 +67,20 @@ export default function Cart() {
         }
       }
 
-      // Simulate payment processing working correctly for 1.5 seconds
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      // Generate real-time order for Admin Dashboard 
-      const orderPayload = {
-        id: `ORD-${Math.floor(Math.random() * 90000) + 10000}`,
-        date: new Date().toISOString(),
-        customer: {
-          name: 'Authenticated Client', // Note: use actual auth context user details here in prod
-          facility: 'Direct Checkout',
-          email: 'demo-client@domain.com',
-          phone: '+233 55 000 0000',
-          address: 'Default Registered Address, Accra, Ghana'
-        },
-        items: lines.map(l => ({ name: l.name, qty: Number(l.quantity), price: l.price })),
-        method: method === 'mobile_money' ? 'Mobile Money' : 'Bank Card',
-        status: 'Pending'
+      // 2) Try Paystack Checkout via backend
+      if (itemsPayload.length > 0) {
+        const res = await apiFetch('/api/payments/create-checkout-session', {
+          method: 'POST',
+          body: JSON.stringify({ 
+            items: itemsPayload,
+            shippingSnapshot: { method: 'Paystack' }
+          })
+        })
+        if (res.success && res.data?.url) {
+          window.location.href = res.data.url
+          return
+        }
       }
-
-      // Read existing, append new, write back to trigger storage events
-      const existing = localStorage.getItem('admin_orders')
-      const parsedOrders = existing ? JSON.parse(existing) : []
-      parsedOrders.push(orderPayload)
-      localStorage.setItem('admin_orders', JSON.stringify(parsedOrders))
-      
-      // Dispatch immediately for identical window frame re-renders
-      window.dispatchEvent(new Event('order_placed'))
-      window.dispatchEvent(new Event('storage'))
-
-      // Complete order
-      clear()
-      navigate(`/checkout/success?method=${method}`)
     } catch (e) {
       setMsg(e.message || 'Checkout failed')
     } finally {
@@ -183,19 +187,11 @@ export default function Cart() {
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             type="button"
-            onClick={() => void processCheckout('mobile_money')}
+            onClick={() => void processCheckout()}
             disabled={busy || !isAuthenticated}
-            className={`px-6 py-2.5 text-sm ${CTA_PRIMARY} bg-green-700 hover:bg-green-800 focus:ring-green-700 disabled:cursor-not-allowed disabled:opacity-50`}
+            className={`px-8 py-3 text-sm font-bold tracking-wide uppercase ${CTA_PRIMARY} disabled:cursor-not-allowed disabled:opacity-50`}
           >
-            {busy ? 'Processing…' : 'Pay with Mobile Money'}
-          </button>
-          <button
-            type="button"
-            onClick={() => void processCheckout('bank_card')}
-            disabled={busy || !isAuthenticated}
-            className={`px-6 py-2.5 text-sm ${CTA_PRIMARY} disabled:cursor-not-allowed disabled:opacity-50`}
-          >
-            {busy ? 'Processing…' : 'Pay with Bank Card'}
+            {busy ? 'Redirecting to payment...' : 'Pay'}
           </button>
         </div>
       </div>

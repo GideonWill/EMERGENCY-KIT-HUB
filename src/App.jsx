@@ -18,6 +18,7 @@ import Register from './pages/Register'
 import Tracking from './pages/Tracking'
 import NotFound from './pages/NotFound'
 import AdminDashboard from './pages/AdminDashboard'
+import ResetPassword from './pages/ResetPassword'
 
 export default function App() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="/checkout/success" element={<CheckoutSuccess />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/tracking" element={<Tracking />} />
         <Route path="*" element={<NotFound />} />
       </Route>

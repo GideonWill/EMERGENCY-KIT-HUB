@@ -6,38 +6,26 @@ const tips = [
   {
     title: 'Read the kit guide first',
     body: 'Every Tobin emergency kit includes a printed guide. Review it with your household before you need it so everyone knows where supplies are stored and how items are organized.',
-    image: '/em1.jpg',
-    imageAlt: 'Emergency kit with organized supplies',
   },
   {
     title: 'Store in a cool, dry, accessible place',
     body: 'Keep the kit where adults can reach it quickly—often a pantry, hall closet, or dedicated shelf. Avoid damp basements or hot attics that can damage packaging or shorten shelf life.',
-    image: '/storage-clean-shelf-supplies.png',
-    imageAlt: 'Wall-mounted medical cabinet with organized supplies',
   },
   {
     title: 'Check dates and rotate supplies',
     body: 'Set a reminder every 3–6 months to check expiration dates on medications and supplies (when applicable). Replace water, batteries, and perishable items according to the manufacturer or your clinician.',
-    image: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800&q=80',
-    imageAlt: 'Calendar planning reminder',
   },
   {
     title: 'Customize for your household',
     body: 'Add copies of emergency contacts, allergy lists, and extra items your family needs (e.g. infant supplies, pet food). This is general guidance—not a substitute for your doctor’s instructions.',
-    image: '/tip-family-plans-at-home.png',
-    imageAlt: 'Family reviewing plans together at home',
   },
   {
     title: 'Medications are personal',
     body: 'Prescription items must be used only as directed by a licensed provider. Never share medications. If you are unsure, contact your clinician or pharmacist.',
-    image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&q=80',
-    imageAlt: 'Supplements and wellness products',
   },
   {
     title: 'Practice with your household',
     body: 'Twice a year, walk through where the kit lives and who grabs it in an outage or storm. A quick drill builds muscle memory so decisions are easier under stress.',
-    image: 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=800&q=80',
-    imageAlt: 'Parents and children talking together at home',
   },
 ]
 
@@ -57,9 +45,6 @@ export default function EmergencyKitHealthTips() {
               key={t.title}
               className="flex flex-col overflow-hidden border border-slate-200 bg-slate-50/80 shadow-sm transition hover:shadow-md"
             >
-              <div className="aspect-[4/3] overflow-hidden bg-slate-200">
-                <img src={t.image} alt={t.imageAlt} className="h-full w-full object-cover" loading="lazy" />
-              </div>
               <div className="flex flex-1 flex-col p-5">
                 <h3 className="font-display text-lg text-slate-900">{t.title}</h3>
                 <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">{t.body}</p>

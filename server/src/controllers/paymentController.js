@@ -1,20 +1,10 @@
-import Stripe from 'stripe'
+import crypto from 'crypto'
 import { validationResult } from 'express-validator'
 import Product from '../models/Product.js'
 import Order from '../models/Order.js'
 import Payment from '../models/Payment.js'
 import Subscription from '../models/Subscription.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
-
-function getStripe() {
-  const key = process.env.STRIPE_SECRET_KEY
-  if (!key) {
-    const err = new Error('Stripe is not configured — set STRIPE_SECRET_KEY in .env')
-    err.status = 503
-    throw err
-  }
-  return new Stripe(key)
-}
 
 export const createCheckoutSession = asyncHandler(async (req, res) => {
   const errors = validationResult(req)
@@ -26,148 +16,207 @@ export const createCheckoutSession = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'items[] required' })
   }
 
-  const stripe = getStripe()
-  const productIds = [...new Set(items.map((i) => i.productId))]
-  const products = await Product.find({ _id: { $in: productIds }, active: true })
-  if (products.length !== productIds.length) {
-    return res.status(400).json({ success: false, message: 'One or more products are invalid or inactive' })
+  const paystackKey = process.env.PAYSTACK_SECRET_KEY
+  if (!paystackKey) {
+    return res.status(503).json({ success: false, message: 'Paystack is not configured — set PAYSTACK_SECRET_KEY in .env' })
   }
 
-  const lineItems = []
+  const isMembership = req.body.flow === 'membership'
   const orderItems = []
   let totalCents = 0
 
-  for (const line of items) {
-    const p = products.find((x) => x._id.toString() === line.productId)
-    const qty = Math.min(99, Math.max(1, parseInt(line.quantity, 10) || 1))
-    const subtotal = p.priceCents * qty
-    totalCents += subtotal
+  if (isMembership) {
+    const planId = items[0].productId
+    const planNames = { essential: 'Essential Plan', care_plus: 'Care Plus Plan', family: 'Family Plan' }
+    const planPrices = { essential: 2900, care_plus: 7900, family: 12900 }
+    
+    const price = planPrices[planId] || 2900
+    const name = planNames[planId] || 'Membership Plan'
+    
+    totalCents = price
     orderItems.push({
-      productId: p._id,
-      name: p.name,
-      unitPriceCents: p.priceCents,
-      quantity: qty,
-      image: p.image,
+      productId: 0, // Placeholder for membership
+      name: name,
+      unitPriceCents: price,
+      quantity: 1,
+      image: null,
     })
-    lineItems.push({
-      price_data: {
-        currency: 'usd',
-        product_data: {
-          name: p.name,
-          ...(p.image ? { images: [p.image] } : {}),
-        },
-        unit_amount: p.priceCents,
-      },
-      quantity: qty,
-    })
+  } else {
+    const productIds = [...new Set(items.map((i) => Number(i.productId)))]
+    const products = await Product.findByIds(productIds)
+    if (products.length !== productIds.length) {
+      return res.status(400).json({ success: false, message: 'One or more products are invalid or inactive' })
+    }
+
+    for (const line of items) {
+      const p = products.find((x) => x._id === Number(line.productId))
+      if (!p) continue
+      
+      const qty = Math.min(99, Math.max(1, parseInt(line.quantity, 10) || 1))
+      const subtotal = p.priceCents * qty
+      totalCents += subtotal
+      orderItems.push({
+        productId: p._id,
+        name: p.name,
+        unitPriceCents: p.priceCents,
+        quantity: qty,
+        image: p.image,
+      })
+    }
   }
 
   const order = await Order.create({
-    user: req.user._id,
+    userId: req.user._id,
     items: orderItems,
     totalCents,
     status: 'pending',
     shippingSnapshot: shippingSnapshot || {},
   })
 
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    payment_method_types: ['card'],
-    line_items: lineItems,
-    success_url:
-      process.env.STRIPE_SUCCESS_URL ||
-      `${process.env.CLIENT_URL || 'http://localhost:5173'}/checkout/success`,
-    cancel_url:
-      process.env.STRIPE_CANCEL_URL ||
-      `${process.env.CLIENT_URL || 'http://localhost:5173'}/cart?checkout=cancel`,
-    client_reference_id: order._id.toString(),
-    metadata: {
-      orderId: order._id.toString(),
-      userId: req.user._id.toString(),
+  // Initialize Paystack Transaction
+  // Paystack amount is in kobo/pesewas (cents)
+  const response = await fetch('https://api.paystack.co/transaction/initialize', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${paystackKey}`,
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify({
+      email: req.user.email,
+      amount: totalCents,
+      currency: 'GHS',
+      first_name: req.user.firstName,
+      last_name: req.user.lastName,
+      phone: req.user.phone,
+      callback_url: `${req.headers.origin || 'http://localhost:5173'}/checkout/success?method=paystack&orderId=${order._id}`,
+      metadata: {
+        orderId: String(order._id),
+        userId: String(req.user._id),
+        custom_fields: [
+          {
+            display_name: "Products",
+            variable_name: "products",
+            value: orderItems.map(item => `${item.name} (x${item.quantity})`).join(', ')
+          }
+        ]
+      },
+    }),
   })
 
-  order.stripeCheckoutSessionId = session.id
-  await order.save()
+  const data = await response.json()
+
+  if (!data.status) {
+    return res.status(400).json({ success: false, message: data.message || 'Paystack initialization failed' })
+  }
+
+  await Order.updatePaystackReference(order._id, data.data.reference)
 
   res.json({
     success: true,
     data: {
-      url: session.url,
-      sessionId: session.id,
+      url: data.data.authorization_url,
+      reference: data.data.reference,
       orderId: order._id,
     },
   })
 })
 
 /**
- * Raw body only — mounted before express.json in index.js
+ * Paystack Webhook Handler (Production Ready)
+ * 
+ * SECURITY AUDIT:
+ * - Signature Verification: Uses HMAC-SHA512 to ensure data integrity.
+ * - Idempotency: Checks database for existing Paystack references before processing.
+ * - Error Handling: Captures failures without exposing internal logic.
  */
-export async function handleStripeWebhook(req, res) {
-  const sig = req.headers['stripe-signature']
-  if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
-    return res.status(503).send('Stripe webhook not configured')
+export async function handlePaystackWebhook(req, res) {
+  const secret = process.env.PAYSTACK_SECRET_KEY
+  if (!secret) {
+    console.error('FATAL: PAYSTACK_SECRET_KEY not set during webhook event')
+    return res.status(500).json({ error: 'Internal configuration error' })
   }
-  const stripe = getStripe()
+
+  // 1. Signature Verification
+  // Paystack sends a signature in the header: x-paystack-signature
+  const signature = req.headers['x-paystack-signature']
+  
+  // Since we use express.raw({ type: 'application/json' }) in index.js,
+  // req.body is a Buffer. We use it directly for HMAC.
+  const hash = crypto
+    .createHmac('sha512', secret)
+    .update(req.body) 
+    .digest('hex')
+  
+  if (hash !== signature) {
+    console.warn('SECURITY ALERT: Invalid Paystack signature received')
+    return res.status(401).send('Invalid signature')
+  }
+
+  // Parse the body after verification
   let event
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET)
+    event = JSON.parse(req.body.toString())
   } catch (err) {
-    return res.status(400).send(`Webhook Error: ${err.message}`)
+    console.error('Webhook Parse Error:', err)
+    return res.status(400).send('Invalid JSON')
   }
+  console.log(`Paystack Webhook Received: ${event.event}`)
 
   try {
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object
+    // 2. Handle successful charge
+    if (event.event === 'charge.success') {
+      const { reference, metadata, amount, currency, customer } = event.data
+      const orderId = metadata?.orderId
 
-      if (session.mode === 'payment') {
-        const orderId = session.metadata?.orderId
-        if (orderId) {
-          const order = await Order.findById(orderId)
-          if (order && order.status === 'pending') {
-            order.status = 'paid'
-            await order.save()
-            await Payment.create({
-              user: order.user,
-              order: order._id,
-              stripeSessionId: session.id,
-              stripePaymentIntentId: session.payment_intent || undefined,
-              amountCents: session.amount_total || order.totalCents,
-              currency: session.currency || 'usd',
-              status: 'succeeded',
-              metadata: { stripeEventId: event.id },
-            })
-          }
-        }
+      // Idempotency check: Has this reference already been processed?
+      const existingPayment = await Payment.findByReference(reference)
+      if (existingPayment) {
+        console.log(`Webhook Ignored: Reference ${reference} already processed`)
+        return res.json({ received: true, message: 'already_processed' })
       }
 
-      if (session.mode === 'subscription') {
-        const userId = session.metadata?.userId
-        const subId = session.subscription
-        if (userId && subId) {
-          const sub = await stripe.subscriptions.retrieve(subId)
-          const priceId = sub.items?.data?.[0]?.price?.id
-          await Subscription.findOneAndUpdate(
-            { stripeSubscriptionId: subId },
-            {
-              user: userId,
-              planName: 'Membership',
-              stripeSubscriptionId: subId,
-              stripePriceId: priceId,
-              status: sub.status === 'active' ? 'active' : 'incomplete',
-              currentPeriodEnd: sub.current_period_end
-                ? new Date(sub.current_period_end * 1000)
-                : undefined,
+      if (orderId) {
+        const order = await Order.findById(Number(orderId))
+        
+        if (order) {
+          // Update Order Status
+          if (order.status === 'pending') {
+            await Order.updateStatus(order._id, 'paid')
+          }
+
+          // Log Transaction
+          await Payment.create({
+            userId: order.user,
+            orderId: order._id,
+            paystackReference: reference,
+            amountCents: amount,
+            currency: currency || 'GHS',
+            status: 'succeeded',
+            metadata: { 
+              paystackEventId: event.id,
+              customerEmail: customer.email,
+              ipAddress: req.ip
             },
-            { upsert: true, new: true }
-          )
+          })
+          
+          console.log(`Order ${orderId} marked as PAID via Paystack Reference ${reference}`)
         }
       }
     }
+
+    // 3. Handle failed charge (Optional but recommended for analytics)
+    if (event.event === 'charge.failed') {
+       const { reference, metadata } = event.data
+       console.log(`Payment FAILED for Reference: ${reference}`)
+       // Logic to notify customer or update order status to 'failed'
+    }
+
   } catch (e) {
-    console.error('Webhook handler error', e)
+    console.error('Paystack Webhook Handler Processing Error:', e)
+    // We return 500 so Paystack retries the webhook later
     return res.status(500).json({ received: false })
   }
 
+  // Return 200 to acknowledge receipt
   res.json({ received: true })
 }

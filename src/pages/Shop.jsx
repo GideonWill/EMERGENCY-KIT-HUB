@@ -1,27 +1,37 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import { products as initialProducts } from '../data/products'
+import { apiFetch } from '../lib/api'
 
 export default function Shop() {
   const [params] = useSearchParams()
   const collection = params.get('collection')
-  const [catalog, setCatalog] = useState(() => {
-    const saved = localStorage.getItem('admin_inventory')
-    return saved ? JSON.parse(saved) : initialProducts
-  })
+  const [catalog, setCatalog] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
-    const syncInventory = () => {
-      const saved = localStorage.getItem('admin_inventory')
-      if (saved) setCatalog(JSON.parse(saved))
+    async function loadProducts() {
+      try {
+        setLoading(true)
+        const res = await apiFetch('/api/products')
+        if (res.success && res.data) {
+          setCatalog(res.data.map(p => ({
+            ...p,
+            price: p.priceCents ? p.priceCents / 100 : 0,
+            rating: p.rating || 4.9,
+            reviews: p.reviews || 120,
+            tagline: p.tagline || 'Premium wellness support.',
+          })))
+        }
+      } catch (err) {
+        console.error('Failed to load products:', err)
+        setError('Failed to load products. Please try again later.')
+      } finally {
+        setLoading(false)
+      }
     }
-    window.addEventListener('storage', syncInventory)
-    window.addEventListener('inventory_updated', syncInventory)
-    return () => {
-      window.removeEventListener('storage', syncInventory)
-      window.removeEventListener('inventory_updated', syncInventory)
-    }
+    loadProducts()
   }, [])
 
   const filtered = useMemo(() => {
@@ -30,7 +40,7 @@ export default function Shop() {
       return catalog.filter((p) => p.badge === 'Best Seller')
     }
     if (collection === 'supplements') {
-      return catalog.filter((p) => !String(p.id).includes('emergency') && !String(p.id).includes('kit'))
+      return catalog.filter((p) => !String(p.sku).includes('KIT'))
     }
     return catalog
   }, [collection, catalog])
@@ -54,13 +64,21 @@ export default function Shop() {
         </div>
       </div>
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-        {filtered.length === 0 && (
-          <p className="py-12 text-center text-slate-600">No products in this collection.</p>
+        {loading ? (
+          <div className="py-12 text-center text-slate-600">Loading products...</div>
+        ) : error ? (
+          <div className="py-12 text-center text-red-600">{error}</div>
+        ) : (
+          <>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+            {filtered.length === 0 && (
+              <p className="py-12 text-center text-slate-600">No products in this collection.</p>
+            )}
+          </>
         )}
       </div>
     </div>

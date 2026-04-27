@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom'
 import { CTA_PRIMARY } from '../config/brand'
 
 export default function ProductCard({ product }) {
-  const { id, name, price, tagline, rating, reviews, image, badge } = product
+  const { id, name, tagline, rating = 4.9, reviews = 120, image, badge } = product
+  const price = product.price ?? (product.priceCents ? product.priceCents / 100 : 0)
 
   return (
     <article className="group flex flex-col overflow-hidden border border-slate-200 bg-white shadow-sm transition hover:shadow-md">

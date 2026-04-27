@@ -9,7 +9,7 @@ export const createAppointment = asyncHandler(async (req, res) => {
   }
   const { scheduledAt, timeSlot, notes, category } = req.body
   const appt = await Appointment.create({
-    user: req.user._id,
+    userId: req.user._id,
     scheduledAt: new Date(scheduledAt),
     timeSlot: timeSlot?.trim(),
     notes: notes?.trim(),
@@ -20,15 +20,12 @@ export const createAppointment = asyncHandler(async (req, res) => {
 })
 
 export const listMyAppointments = asyncHandler(async (req, res) => {
-  const list = await Appointment.find({ user: req.user._id }).sort({ scheduledAt: 1 }).lean()
+  const list = await Appointment.findByUser(req.user._id)
   res.json({ success: true, data: list })
 })
 
 export const listAllAppointments = asyncHandler(async (req, res) => {
-  const list = await Appointment.find({})
-    .populate('user', 'email profile.firstName profile.lastName')
-    .sort({ scheduledAt: 1 })
-    .lean()
+  const list = await Appointment.findAllWithUser()
   res.json({ success: true, data: list })
 })
 
@@ -38,11 +35,7 @@ export const updateAppointmentStatus = asyncHandler(async (req, res) => {
   if (!allowed.includes(status)) {
     return res.status(400).json({ success: false, message: 'Invalid status' })
   }
-  const appt = await Appointment.findByIdAndUpdate(
-    req.params.id,
-    { status },
-    { new: true }
-  ).lean()
+  const appt = await Appointment.updateStatus(req.params.id, status)
   if (!appt) {
     return res.status(404).json({ success: false, message: 'Not found' })
   }

@@ -1,10 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { apiFetch, getApiBase, getStoredToken, setStoredToken } from '../lib/api'
 import { DEMO_SESSION_KEY, isDemoMode } from '../config/demoMode'
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence, updateProfile } from 'firebase/auth'
-
-// Use the initialized auth from our local config
-import { auth } from '../config/firebase'
+import { authClient } from '../lib/auth'
 
 const AuthContext = createContext(null)
 
@@ -32,34 +29,59 @@ export function AuthProvider({ children }) {
     if (isDemoMode()) {
       setUser(readDemoUser())
       setLoading(false)
+      return
+    }
+
+    // Try Neon Auth first
+    try {
+      const { data } = await authClient.getSession()
+      if (data?.user) {
+        setUser({
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.name || data.user.email,
+          role: data.user.role || 'user',
+        })
+        setLoading(false)
+        return
+      }
+    } catch (err) {
+      console.warn('Neon Auth session check failed, falling back to legacy API:', err)
+    }
+
+    const token = getStoredToken()
+    if (!token) {
+      setUser(null)
+      setLoading(false)
+      return
+    }
+
+    try {
+      const res = await apiFetch('/api/users/me')
+      if (res.success && res.data) {
+        setUser({
+          id: res.data.id,
+          email: res.data.email,
+          name: res.data.profile?.firstName
+            ? `${res.data.profile.firstName} ${res.data.profile.lastName || ''}`.trim()
+            : res.data.email,
+          role: res.data.role,
+        })
+      } else {
+        setStoredToken('')
+        setUser(null)
+      }
+    } catch (err) {
+      console.error('Failed to restore session:', err)
+      setStoredToken('')
+      setUser(null)
+    } finally {
+      setLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    if (isDemoMode()) {
-      refreshUser()
-      return
-    }
-    
-    // Listen for Firebase Auth state changes
-    import('firebase/auth').then(({ onAuthStateChanged }) => {
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        if (firebaseUser) {
-          const token = await firebaseUser.getIdToken()
-          setStoredToken(token)
-          setUser({
-            id: firebaseUser.uid,
-            email: firebaseUser.email,
-            name: firebaseUser.displayName,
-          })
-        } else {
-          setStoredToken('')
-          setUser(null)
-        }
-        setLoading(false)
-      })
-      return () => unsubscribe()
-    })
+    refreshUser()
   }, [refreshUser])
 
   const login = useCallback(async (email, password, rememberMe = true) => {
@@ -78,14 +100,45 @@ export function AuthProvider({ children }) {
       setUser(u)
       return { data: { user: u, token: 'demo' } }
     }
-    // Firebase login
-    await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence)
-    const userCredential = await signInWithEmailAndPassword(auth, email, password)
-    const token = await userCredential.user.getIdToken()
-    setStoredToken(token)
-    const u = { id: userCredential.user.uid, email: userCredential.user.email, name: userCredential.user.displayName }
-    setUser(u)
-    return { data: { user: u, token } }
+    
+    // Try Neon Auth Login
+    try {
+      const result = await authClient.signIn.email({ email, password })
+      if (result.data?.user) {
+        const u = {
+          id: result.data.user.id,
+          email: result.data.user.email,
+          name: result.data.user.name || result.data.user.email,
+          role: result.data.user.role || 'user',
+        }
+        setUser(u)
+        return { data: { user: u } }
+      }
+    } catch (err) {
+      console.warn('Neon Auth login failed, falling back to legacy API:', err)
+    }
+
+    // Fallback to Legacy API Login
+    const res = await apiFetch('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    })
+    
+    if (res.success && res.data) {
+      setStoredToken(res.data.token)
+      const u = {
+        id: res.data.user.id,
+        email: res.data.user.email,
+        name: res.data.user.profile?.firstName
+          ? `${res.data.user.profile.firstName} ${res.data.user.profile.lastName || ''}`.trim()
+          : res.data.user.email,
+        role: res.data.user.role,
+      }
+      setUser(u)
+      return { data: { user: u, token: res.data.token } }
+    }
+    
+    throw new Error(res.message || 'Login failed. Please check your credentials.')
   }, [])
 
   const register = useCallback(async ({ email, password, firstName, lastName, phone, rememberMe = true }) => {
@@ -105,22 +158,54 @@ export function AuthProvider({ children }) {
       return { data: { user: u, token: 'demo' } }
     }
     
-    // Firebase register
-    await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence)
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-    
-    const displayName = `${firstName || ''} ${lastName || ''}`.trim()
-    if (displayName) {
-      await updateProfile(userCredential.user, { displayName })
-    }
-    // Note: Firebase standard auth doesn't have a direct 'phone' field without Phone Auth integration,
-    // so we handle what we can on the profile. In a real app we'd save phone to Firestore.
+    // Try Neon Auth Register
+    let neonAuthResult = null
+    try {
+      neonAuthResult = await authClient.signUp.email({ 
+        email, 
+        password, 
+        name: `${firstName || ''} ${lastName || ''}`.trim() || email 
+      })
 
-    const token = await userCredential.user.getIdToken()
-    setStoredToken(token)
-    const u = { id: userCredential.user.uid, email: userCredential.user.email, name: displayName || userCredential.user.displayName }
-    setUser(u)
-    return { data: { user: u, token } }
+      if (neonAuthResult.data?.user) {
+        const u = {
+          id: neonAuthResult.data.user.id,
+          email: neonAuthResult.data.user.email,
+          name: neonAuthResult.data.user.name || neonAuthResult.data.user.email,
+          role: neonAuthResult.data.user.role || 'user',
+        }
+        setUser(u)
+        return { data: { user: u } }
+      }
+    } catch (err) {
+      console.warn('Neon Auth registration failed, trying legacy API:', err)
+    }
+
+    // Fallback to Legacy API Register
+    try {
+      const res = await apiFetch('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ email, password, firstName, lastName, phone }),
+      })
+
+      if (res.success && res.data) {
+        setStoredToken(res.data.token)
+        const u = {
+          id: res.data.user.id,
+          email: res.data.user.email,
+          name: `${firstName || ''} ${lastName || ''}`.trim() || res.data.user.email,
+          role: res.data.user.role,
+        }
+        setUser(u)
+        return { data: { user: u, token: res.data.token } }
+      }
+    } catch (err) {
+      // If legacy fails, we throw the legacy error message
+      throw err
+    }
+
+    // If we reach here, both failed but didn't throw
+    throw new Error(neonAuthResult?.error?.message || 'Registration failed')
   }, [])
 
   const logout = useCallback(async () => {
@@ -130,17 +215,25 @@ export function AuthProvider({ children }) {
       setUser(null)
       return
     }
-    const { signOut } = await import('firebase/auth')
-    await signOut(auth)
+    await authClient.signOut().catch(() => {})
     setStoredToken('')
     setUser(null)
   }, [])
 
   const resetPassword = useCallback(async (email) => {
-    if (isDemoMode()) {
-      throw new Error('Password reset is not available in demo mode.')
-    }
-    await sendPasswordResetEmail(auth, email)
+    // Neon Auth supports password reset
+    const result = await authClient.forgetPassword({ 
+      email, 
+      redirectTo: window.location.origin + '/reset-password' 
+    })
+    if (result.error) throw new Error(result.error.message)
+    return result
+  }, [])
+
+  const completeResetPassword = useCallback(async (newPassword) => {
+    const result = await authClient.resetPassword({ newPassword })
+    if (result.error) throw new Error(result.error.message)
+    return result
   }, [])
 
   const value = useMemo(
@@ -148,14 +241,15 @@ export function AuthProvider({ children }) {
       user,
       loading,
       isAuthenticated: !!user,
-      isAdmin: user?.email === 'gideonogunu@gmail.com' || (isDemoMode() && user?.email === 'admin@example.com'),
+      isAdmin: user?.role === 'admin' || user?.email === 'gideonogunu@gmail.com' || (isDemoMode() && user?.email === 'admin@example.com'),
       refreshUser,
       login,
       register,
       logout,
       resetPassword,
+      completeResetPassword,
     }),
-    [user, loading, refreshUser, login, register, logout, resetPassword]
+    [user, loading, refreshUser, login, register, logout, resetPassword, completeResetPassword]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -3,163 +3,224 @@ import { Link } from 'react-router-dom'
 import { InboxStackIcon, ArchiveBoxIcon, UsersIcon, ChartBarIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { products as initialProducts } from '../data/products'
 import { CTA_PRIMARY, CTA_SECONDARY } from '../config/brand'
-
-const mockOrders = [
-  {
-    id: 'ORD-908A2',
-    date: '2026-04-08T09:12:00Z',
-    customer: {
-      name: 'Dr. Kwame Mensah',
-      facility: 'Kumasi Regional Hospital',
-      email: 'kmensah@kumasiregional.gov.gh',
-      phone: '+233 54 123 4567',
-      address: 'Plot 4, Hospital Road, Kumasi, Ashanti Region'
-    },
-    items: [
-      { name: 'Comprehensive First Aid Kit', qty: 150, price: 450.00 },
-      { name: 'Daily Wellness Supplement Bulk', qty: 500, price: 120.00 },
-      { name: 'Advanced Trauma Pack', qty: 25, price: 1200.00 }
-    ],
-    method: 'Mobile Money',
-    status: 'Pending', // Pending, Processing, Shipped, Delivered
-  },
-  {
-    id: 'ORD-908A1',
-    date: '2026-04-07T14:45:00Z',
-    customer: {
-      name: 'Abena Osei',
-      facility: 'Pharmacy Plus Distributors',
-      email: 'procurement@pharmacyplus.com.gh',
-      phone: '+233 20 987 6543',
-      address: 'Spintex Road, Accra, Greater Accra'
-    },
-    items: [
-      { name: 'Standard Emergency Kit', qty: 300, price: 250.00 },
-      { name: 'Antiseptic Wipes (Case of 100)', qty: 50, price: 80.00 }
-    ],
-    method: 'Bank Transfer',
-    status: 'Shipped',
-  },
-  {
-    id: 'ORD-908A0',
-    date: '2026-04-05T10:30:00Z',
-    customer: {
-      name: 'Emmanuel Dartey',
-      facility: 'Individual',
-      email: 'emmanuel.d@example.com',
-      phone: '+233 24 555 1122',
-      address: 'House 5, Ridge Estates, Takoradi, Western Region'
-    },
-    items: [
-      { name: 'Standard Emergency Kit', qty: 2, price: 250.00 }
-    ],
-    method: 'Bank Card',
-    status: 'Delivered',
-  }
-]
+import { apiFetch, getApiBase, getStoredToken } from '../lib/api'
 
 export default function AdminDashboard() {
-  const [orders, setOrders] = useState(() => {
-    const saved = localStorage.getItem('admin_orders')
-    if (saved) return JSON.parse(saved)
-    localStorage.setItem('admin_orders', JSON.stringify(mockOrders))
-    return mockOrders
-  })
+  const [orders, setOrders] = useState([])
+  const [loadingOrders, setLoadingOrders] = useState(true)
 
-  const [inventory, setInventory] = useState(() => {
-    const saved = localStorage.getItem('admin_inventory')
-    if (saved) return JSON.parse(saved)
-    localStorage.setItem('admin_inventory', JSON.stringify(initialProducts))
-    return initialProducts
-  })
+  const [inventory, setInventory] = useState([])
+  const [loadingInventory, setLoadingInventory] = useState(true)
+
+  const [transactions, setTransactions] = useState([])
+  const [loadingTransactions, setLoadingTransactions] = useState(false)
   
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [activeTab, setActiveTab] = useState('orders')
   const [newProduct, setNewProduct] = useState({ name: '', price: '', category: '', status: 'In Stock', image: null })
 
-  // Sync back status updates to localStorage
   useEffect(() => {
-    localStorage.setItem('admin_orders', JSON.stringify(orders))
-  }, [orders])
-
-  useEffect(() => {
-    localStorage.setItem('admin_inventory', JSON.stringify(inventory))
-    // Dispatch event for other tabs to update
-    window.dispatchEvent(new Event('inventory_updated'))
-  }, [inventory])
-
-  // Listen for real-time orders globally (from same tab CustomEvent or cross-tab storage event)
-  useEffect(() => {
-    const handleStorageUpdate = () => {
-      const saved = localStorage.getItem('admin_orders')
-      if (saved) {
-        setOrders(JSON.parse(saved))
+    if (activeTab === 'payments') {
+      async function loadTransactions() {
+        setLoadingTransactions(true)
+        try {
+          const res = await apiFetch('/api/admin/paystack/transactions')
+          if (res.success) setTransactions(res.data || [])
+        } catch (err) {
+          console.error(err)
+        } finally {
+          setLoadingTransactions(false)
+        }
       }
-      const savedInv = localStorage.getItem('admin_inventory')
-      if (savedInv) {
-        setInventory(JSON.parse(savedInv))
+      loadTransactions()
+    }
+  }, [activeTab])
+  // Load Orders from API
+  useEffect(() => {
+    async function loadOrders() {
+      setLoadingOrders(true)
+      try {
+        const res = await apiFetch('/api/orders/all')
+        if (res.success) {
+          setOrders(res.data || [])
+        } else {
+          console.error('Failed to load orders:', res.message)
+        }
+      } catch (err) {
+        console.error('API error:', err)
+      } finally {
+        setLoadingOrders(false)
       }
     }
-    window.addEventListener('storage', handleStorageUpdate)
-    window.addEventListener('order_placed', handleStorageUpdate)
+    loadOrders()
+  }, [])
+
+  // Load Inventory from API
+  useEffect(() => {
+    async function loadInventory() {
+      setLoadingInventory(true)
+      try {
+        const res = await apiFetch('/api/products?active=all')
+        if (res.success) {
+          setInventory(res.data)
+        } else {
+          console.error('Failed to load inventory:', res.message)
+        }
+      } catch (err) {
+        console.error('API error:', err)
+      } finally {
+        setLoadingInventory(false)
+      }
+    }
+    loadInventory()
+  }, [])
+
+  // Listen for real-time orders globally
+  useEffect(() => {
+    const handleOrderPlaced = () => {
+      // Refresh orders when a new one is placed
+      apiFetch('/api/orders/all').then(res => {
+        if (res.success) setOrders(res.data || [])
+      }).catch(console.error)
+    }
+    window.addEventListener('order_placed', handleOrderPlaced)
     return () => {
-      window.removeEventListener('storage', handleStorageUpdate)
-      window.removeEventListener('order_placed', handleStorageUpdate)
+      window.removeEventListener('order_placed', handleOrderPlaced)
     }
   }, [])
 
-  const calcTotal = (items) => items.reduce((sum, item) => sum + (item.qty * item.price), 0)
+  const formatCurrency = (cents) => (cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-  const updateStatus = (id, newStatus) => {
-    setOrders(orders.map(o => o.id === id ? { ...o, status: newStatus } : o))
+  const updateStatus = async (id, newStatus) => {
+    // Optimistic update
+    const previous = orders.map(o => ({ ...o }))
+    setOrders(orders.map(o => o.id === id ? { ...o, status: newStatus.toLowerCase() } : o))
     if (selectedOrder && selectedOrder.id === id) {
-      setSelectedOrder({ ...selectedOrder, status: newStatus })
+      setSelectedOrder({ ...selectedOrder, status: newStatus.toLowerCase() })
+    }
+    
+    try {
+      const res = await apiFetch(`/api/orders/${id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: newStatus.toLowerCase() })
+      })
+      if (!res.success) throw new Error(res.message)
+    } catch (err) {
+      console.error(err)
+      setOrders(previous)
+      if (selectedOrder && selectedOrder.id === id) {
+        setSelectedOrder(previous.find(o => o.id === id))
+      }
+      alert('Failed to update order status.')
     }
   }
 
-  const updateProductStatus = (id, status) => {
+  const updateProductStatus = async (id, status) => {
+    const previous = inventory.map(p => ({ ...p }))
     setInventory(inventory.map(p => p.id === id ? { ...p, status } : p))
-  }
-
-  const deleteProduct = (id) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      setInventory(inventory.filter(p => p.id !== id))
+    try {
+      const res = await apiFetch(`/api/products/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ status })
+      })
+      if (!res.success) {
+        throw new Error('Update failed')
+      }
+    } catch (err) {
+      console.error(err)
+      setInventory(previous)
+      alert('Failed to update product status.')
     }
   }
 
-  const addProduct = (e) => {
+  const deleteProduct = async (id) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      const previous = inventory.map(p => ({ ...p }))
+      setInventory(inventory.filter(p => p.id !== id))
+      try {
+        const res = await apiFetch(`/api/products/${id}`, {
+          method: 'DELETE'
+        })
+        if (!res.success) {
+          throw new Error('Delete failed')
+        }
+      } catch (err) {
+        console.error(err)
+        setInventory(previous)
+        alert('Failed to delete product.')
+      }
+    }
+  }
+
+  const addProduct = async (e) => {
     e.preventDefault()
     if (!newProduct.name || !newProduct.price) return
-    const id = Date.now()
-    const product = { 
-      ...newProduct, 
-      id, 
-      price: parseFloat(newProduct.price),
-      image: newProduct.image || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&q=80',
-      tagline: 'New addition to catalog',
-      rating: 5,
-      reviews: 0
+    const priceCents = Math.round(parseFloat(newProduct.price) * 100)
+    
+    // Generate a quick slug
+    const slug = newProduct.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now().toString().slice(-4)
+
+    try {
+      let imageUrl = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&q=80'
+
+      // If there's an image file, upload it first
+      if (newProduct.imageFile) {
+        const formData = new FormData()
+        formData.append('image', newProduct.imageFile)
+        
+        const uploadRes = await fetch(`${getApiBase()}/api/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${getStoredToken()}`
+          },
+          body: formData
+        })
+        const uploadData = await uploadRes.json()
+        if (uploadData.success) {
+          imageUrl = uploadData.url
+        }
+      }
+
+      const res = await apiFetch('/api/products', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: newProduct.name,
+          slug,
+          priceCents,
+          image: imageUrl,
+          active: true,
+          status: newProduct.status || 'In Stock'
+        })
+      })
+      if (res.success) {
+        // Refresh inventory
+        const invRes = await apiFetch('/api/products?active=all')
+        if (invRes.success) {
+          setInventory(invRes.data)
+        }
+        setNewProduct({ name: '', price: '', category: '', status: 'In Stock', image: null, imageFile: null })
+      } else {
+        alert(res.message || 'Failed to create product.')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Failed to create product.')
     }
-    setInventory([...inventory, product])
-    setNewProduct({ name: '', price: '', category: '', status: 'In Stock', image: null })
   }
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setNewProduct({ ...newProduct, image: reader.result })
-      }
-      reader.readAsDataURL(file)
+      setNewProduct({ ...newProduct, imageFile: file, image: URL.createObjectURL(file) })
     }
   }
 
   const statusColors = {
-    'Pending': 'bg-amber-100 text-amber-800',
-    'Processing': 'bg-blue-100 text-blue-800',
-    'Shipped': 'bg-purple-100 text-purple-800',
-    'Delivered': 'bg-green-100 text-green-800'
+    'pending': 'bg-amber-100 text-amber-800',
+    'processing': 'bg-blue-100 text-blue-800',
+    'shipped': 'bg-purple-100 text-purple-800',
+    'delivered': 'bg-green-100 text-green-800',
+    'paid': 'bg-blue-100 text-blue-800',
   }
 
   const stockStatusColors = {
@@ -185,9 +246,9 @@ export default function AdminDashboard() {
               <InboxStackIcon className="w-5 h-5" />
               <span>Orders</span>
             </div>
-            {orders.filter(o => o.status === 'Pending').length > 0 && (
+            {orders.filter(o => o.status === 'pending').length > 0 && (
               <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                {orders.filter(o => o.status === 'Pending').length}
+                {orders.filter(o => o.status === 'pending').length}
               </span>
             )}
           </button>
@@ -212,6 +273,13 @@ export default function AdminDashboard() {
              <ChartBarIcon className="w-5 h-5" />
              <span>Analytics</span>
           </button>
+          <button 
+            onClick={() => { setActiveTab('payments'); setSelectedOrder(null); }}
+            className={`w-full flex items-center justify-start gap-3 px-3 py-2 rounded-md transition font-medium ${activeTab === 'payments' ? 'bg-brand-600 text-white' : 'hover:bg-slate-800 hover:text-white'}`}
+          >
+             <ChartBarIcon className="w-5 h-5" />
+             <span>Payments</span>
+          </button>
         </nav>
         <div className="p-4 border-t border-slate-800">
           <Link to="/shop" className="text-sm text-slate-400 hover:text-white transition flex items-center gap-2">
@@ -222,6 +290,45 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <div className="flex-1 overflow-x-hidden">
+        {activeTab === 'payments' && (
+          <div className="p-4 sm:p-8">
+            <h1 className="text-2xl font-display text-slate-900">Payment Transactions</h1>
+            <p className="text-sm text-slate-600 mt-1 mb-8">Real-time financial activity from Paystack.</p>
+            <div className="bg-white border border-slate-200 shadow-sm overflow-x-auto">
+              <table className="w-full text-left whitespace-nowrap">
+                <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="px-6 py-4">Reference</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">Amount</th>
+                    <th className="px-6 py-4">Customer</th>
+                    <th className="px-6 py-4">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-sm">
+                  {loadingTransactions ? (
+                    <tr><td colSpan="5" className="py-8 text-center text-slate-500">Loading transactions...</td></tr>
+                  ) : transactions.map((tx) => (
+                    <tr key={tx.id} className="hover:bg-slate-50 transition">
+                      <td className="px-6 py-4 font-mono text-xs text-slate-600">{tx.reference}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${tx.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'}`}>
+                          {tx.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-slate-900">
+                        {tx.currency} {(tx.amount / 100).toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4 text-slate-500">{tx.customer.email}</td>
+                      <td className="px-6 py-4 text-slate-500">{new Date(tx.created_at).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'customers' && (
           <div className="p-4 sm:p-8">
             <h1 className="text-2xl font-display text-slate-900">Customer Directory</h1>
@@ -238,14 +345,15 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
-                  {Array.from(new Map(orders.map(o => [o.customer.email, o.customer])).values()).map((customer, idx) => {
-                     const customerOrders = orders.filter(o => o.customer.email === customer.email);
+                  {Array.from(new Map(orders.map(o => [o.user.email, o.user])).values()).map((customer, idx) => {
+                     const customerOrders = orders.filter(o => o.user.email === customer.email);
+                     const fullName = `${customer.profile?.firstName || ''} ${customer.profile?.lastName || ''}`.trim() || customer.email
                      return (
                         <tr key={idx} className="hover:bg-slate-50 transition">
-                          <td className="px-6 py-4 font-medium text-slate-900">{customer.name}</td>
+                          <td className="px-6 py-4 font-medium text-slate-900">{fullName}</td>
                           <td className="px-6 py-4 text-slate-500">{customer.email}</td>
-                          <td className="px-6 py-4 text-slate-500">{customer.phone}</td>
-                          <td className="px-6 py-4 text-slate-500">{customer.facility || 'Individual'}</td>
+                          <td className="px-6 py-4 text-slate-500">{customer.profile?.phone || 'N/A'}</td>
+                          <td className="px-6 py-4 text-slate-500">Registered User</td>
                           <td className="px-6 py-4 text-right font-semibold">
                              {customerOrders.length}
                           </td>
@@ -298,7 +406,7 @@ export default function AdminDashboard() {
                           </select>
                         </td>
                         <td className="px-6 py-4 text-right font-semibold text-slate-900">
-                          {product.price.toFixed(2)}
+                          {(product.priceCents / 100).toFixed(2)}
                         </td>
                         <td className="px-6 py-4 text-right">
                           <button 
@@ -394,20 +502,20 @@ export default function AdminDashboard() {
                   <div>
                     <h1 className="text-2xl font-display text-slate-900">Receipt / Packing Slip</h1>
                     <p className="text-slate-500 mt-1">Order ID: {selectedOrder.id}</p>
-                    <p className="text-slate-500 text-sm">Placed on: {new Date(selectedOrder.date).toLocaleString()}</p>
+                    <p className="text-slate-500 text-sm">Placed on: {new Date(selectedOrder.createdAt).toLocaleString()}</p>
                   </div>
                   <div className="text-right">
                     <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${statusColors[selectedOrder.status]}`}>
                       {selectedOrder.status}
                     </span>
                     <div className="mt-4 flex flex-col gap-2">
-                      {selectedOrder.status === 'Pending' && (
-                        <button onClick={() => updateStatus(selectedOrder.id, 'Shipped')} className={`text-xs ${CTA_PRIMARY} py-1.5 px-4`}>
+                      {(selectedOrder.status === 'pending' || selectedOrder.status === 'paid') && (
+                        <button onClick={() => updateStatus(selectedOrder.id, 'shipped')} className={`text-xs ${CTA_PRIMARY} py-1.5 px-4`}>
                           Mark as Shipped
                         </button>
                       )}
-                      {selectedOrder.status === 'Shipped' && (
-                        <button onClick={() => updateStatus(selectedOrder.id, 'Delivered')} className={`text-xs ${CTA_PRIMARY} py-1.5 px-4`}>
+                      {selectedOrder.status === 'shipped' && (
+                        <button onClick={() => updateStatus(selectedOrder.id, 'delivered')} className={`text-xs ${CTA_PRIMARY} py-1.5 px-4`}>
                           Mark as Delivered
                         </button>
                       )}
@@ -418,15 +526,19 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 py-6 border-b border-slate-200">
                   <div>
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Customer & Shipping</h3>
-                    <p className="font-semibold text-slate-900">{selectedOrder.customer.name}</p>
-                    {selectedOrder.customer.facility && <p className="text-slate-700">{selectedOrder.customer.facility}</p>}
-                    <p className="text-slate-600 mt-2 whitespace-pre-wrap">{selectedOrder.customer.address}</p>
+                    <p className="font-semibold text-slate-900">{`${selectedOrder.user.profile?.firstName || ''} ${selectedOrder.user.profile?.lastName || ''}`.trim() || selectedOrder.user.email}</p>
+                    <p className="text-slate-600 mt-2 whitespace-pre-wrap">{[
+                      selectedOrder.shippingSnapshot?.line1, 
+                      selectedOrder.shippingSnapshot?.city, 
+                      selectedOrder.shippingSnapshot?.state, 
+                      selectedOrder.shippingSnapshot?.country
+                    ].filter(Boolean).join(', ') || 'No Address Provided'}</p>
                   </div>
                   <div>
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Contact & Payment</h3>
-                    <p className="text-slate-700">{selectedOrder.customer.email}</p>
-                    <p className="text-slate-700">{selectedOrder.customer.phone}</p>
-                    <p className="mt-3 font-medium text-slate-900">Paid via: {selectedOrder.method}</p>
+                    <p className="text-slate-700">{selectedOrder.user.email}</p>
+                    <p className="text-slate-700">{selectedOrder.user.profile?.phone || 'N/A'}</p>
+                    <p className="mt-3 font-medium text-slate-900">Payment: {selectedOrder.shippingSnapshot?.method || 'Card via Paystack'}</p>
                   </div>
                 </div>
 
@@ -445,16 +557,16 @@ export default function AdminDashboard() {
                       {selectedOrder.items.map((item, idx) => (
                         <tr key={idx} className="text-sm text-slate-800">
                           <td className="py-3 pr-2 font-medium">{item.name}</td>
-                          <td className="py-3 px-2 text-right">{item.qty.toLocaleString()}</td>
-                          <td className="py-3 px-2 text-right">GH₵ {item.price.toFixed(2)}</td>
-                          <td className="py-3 pl-2 text-right font-semibold text-slate-900">GH₵ {(item.qty * item.price).toFixed(2)}</td>
+                          <td className="py-3 px-2 text-right">{item.quantity.toLocaleString()}</td>
+                          <td className="py-3 px-2 text-right">GH₵ {formatCurrency(item.unitPriceCents)}</td>
+                          <td className="py-3 pl-2 text-right font-semibold text-slate-900">GH₵ {formatCurrency(item.quantity * item.unitPriceCents)}</td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
                       <tr className="border-t-2 border-slate-800 font-bold text-slate-900 text-lg">
                         <td colSpan="3" className="py-4 text-right pr-4">Grand Total</td>
-                        <td className="py-4 text-right">GH₵ {calcTotal(selectedOrder.items).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td className="py-4 text-right">GH₵ {formatCurrency(selectedOrder.totalCents)}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -497,16 +609,20 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-sm">
-                    {orders.sort((a,b) => new Date(b.date) - new Date(a.date)).map(order => (
+                    {loadingOrders ? (
+                      <tr><td colSpan="6" className="py-8 text-center text-slate-500">Loading orders...</td></tr>
+                    ) : orders.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(order => {
+                      const fullName = `${order.user.profile?.firstName || ''} ${order.user.profile?.lastName || ''}`.trim() || order.user.email
+                      return (
                       <tr key={order.id} className="hover:bg-slate-50 transition">
                         <td className="px-6 py-4 font-medium text-slate-900">{order.id}</td>
-                        <td className="px-6 py-4 text-slate-500">{new Date(order.date).toLocaleDateString()}</td>
+                        <td className="px-6 py-4 text-slate-500">{new Date(order.createdAt).toLocaleDateString()}</td>
                         <td className="px-6 py-4">
-                          <p className="font-semibold text-slate-800">{order.customer.name}</p>
-                          <p className="text-xs text-slate-500">{order.customer.facility}</p>
+                          <p className="font-semibold text-slate-800">{fullName}</p>
+                          <p className="text-xs text-slate-500">{order.user.email}</p>
                         </td>
                         <td className="px-6 py-4 text-right font-semibold text-slate-900">
-                          {calcTotal(order.items).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          {formatCurrency(order.totalCents)}
                         </td>
                         <td className="px-6 py-4 text-center">
                           <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColors[order.status]}`}>
@@ -522,7 +638,7 @@ export default function AdminDashboard() {
                           </button>
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import { getProductById, getGalleryImages, getRelatedProducts, products as initialProducts } from '../data/products'
+import { getGalleryImages, getRelatedProducts, products as initialProducts } from '../data/products'
 import { useCart } from '../context/CartContext'
 import { COMPANY_NAME, CTA_PRIMARY, CTA_SECONDARY } from '../config/brand'
+import { apiFetch } from '../lib/api'
 
 function ChevronRight({ className }) {
   return (
@@ -15,32 +16,70 @@ function ChevronRight({ className }) {
 
 export default function ProductDetails() {
   const { id } = useParams()
-  const [catalog, setCatalog] = useState(() => {
-    const saved = localStorage.getItem('admin_inventory')
-    return saved ? JSON.parse(saved) : initialProducts
-  })
+  const [product, setProduct] = useState(null)
+  const [catalog, setCatalog] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  useEffect(() => {
-    const syncInventory = () => {
-      const saved = localStorage.getItem('admin_inventory')
-      if (saved) setCatalog(JSON.parse(saved))
-    }
-    window.addEventListener('storage', syncInventory)
-    window.addEventListener('inventory_updated', syncInventory)
-    return () => {
-      window.removeEventListener('storage', syncInventory)
-      window.removeEventListener('inventory_updated', syncInventory)
-    }
-  }, [])
-
-  const product = catalog.find(p => String(p.id) === String(id))
   const [activeIdx, setActiveIdx] = useState(0)
   const [qty, setQty] = useState(1)
   const [subscription, setSubscription] = useState('one-time')
   const [addedMsg, setAddedMsg] = useState('')
   const { addItem } = useCart()
 
-  if (!product) {
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true)
+        // Fetch specific product and entire catalog for related products
+        const [prodRes, catRes] = await Promise.all([
+          apiFetch(`/api/products/${id}`),
+          apiFetch('/api/products')
+        ])
+        
+        if (prodRes.success && prodRes.data) {
+          // Merge with static data for missing UI fields (rating, reviews, highlights)
+          const staticMatch = initialProducts.find(p => p.slug === prodRes.data.slug || String(p.id) === String(id))
+          setProduct({
+            ...staticMatch,
+            ...prodRes.data,
+            // compute display price from priceCents
+            price: prodRes.data.priceCents ? prodRes.data.priceCents / 100 : (staticMatch?.price || 0),
+            rating: staticMatch?.rating || 4.9,
+            reviews: staticMatch?.reviews || 120,
+            tagline: staticMatch?.tagline || 'Premium wellness support.',
+            highlights: staticMatch?.highlights || ['High quality ingredients', 'Lab tested', 'Fast shipping']
+          })
+        }
+        
+        if (catRes.success && catRes.data) {
+          setCatalog(catRes.data.map(p => ({
+            ...p,
+            price: p.priceCents ? p.priceCents / 100 : 0,
+            rating: p.rating || 4.9,
+            reviews: p.reviews || 120,
+            tagline: p.tagline || 'Premium wellness support.',
+          })))
+        }
+      } catch (err) {
+        console.error('Failed to load product details:', err)
+        setError('Product not found.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-24 text-center sm:px-6 lg:px-8">
+        <h1 className="font-display text-2xl text-slate-900">Loading...</h1>
+      </div>
+    )
+  }
+
+  if (error || !product) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-24 text-center sm:px-6 lg:px-8">
         <h1 className="font-display text-2xl text-slate-900">Product not found</h1>

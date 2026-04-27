@@ -9,7 +9,7 @@ export async function protect(req, res, next) {
   const token = header.slice(7)
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    const user = await User.findById(decoded.userId).select('-passwordHash')
+    const user = await User.findById(decoded.userId)
     if (!user) {
       return res.status(401).json({ success: false, message: 'User not found' })
     }

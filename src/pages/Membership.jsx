@@ -57,21 +57,22 @@ export default function Membership() {
     }
   }, [hash])
 
-  async function processMembershipCheckout(method = 'bank_card') {
+  async function processMembershipCheckout() {
     setMsg('')
     if (!selectedPlan) {
       setMsg('Please select a plan first.')
       return
     }
-    // Simulate checkout
+
     if (isDemoMode() && isAuthenticated) {
       setBusy(true)
       window.setTimeout(() => {
-        navigate(`/checkout/success?demo=1&flow=membership&method=${method}`)
+        navigate(`/checkout/success?demo=1&flow=membership&method=paystack`)
         setBusy(false)
       }, 450)
       return
     }
+
     if (!isAuthenticated) {
       setMsg('Sign in or create an account using the panel below first.')
       return
@@ -79,9 +80,28 @@ export default function Membership() {
     
     setBusy(true)
     try {
-      // Simulate success for now since we don't have a backend payment gateway configured
+      try {
+        // We reuse the same endpoint or create a specific one
+        const res = await apiFetch('/api/payments/create-checkout-session', {
+          method: 'POST',
+          body: JSON.stringify({ 
+            items: [{ productId: selectedPlan.id, quantity: 1, type: 'membership' }],
+            flow: 'membership'
+          })
+        })
+        if (res.success && res.data?.url) {
+          window.location.href = res.data.url
+          return
+        }
+      } catch (apiErr) {
+        if (apiErr.status !== 503) {
+          throw apiErr
+        }
+        console.warn('Paystack not configured, falling back to simulated checkout')
+      }
+
       await new Promise(resolve => setTimeout(resolve, 1500))
-      navigate(`/checkout/success?flow=membership&method=${method}`)
+      navigate(`/checkout/success?flow=membership&method=paystack`)
     } catch (e) {
       setMsg(e.message || 'Could not start membership checkout')
     } finally {
@@ -129,16 +149,11 @@ export default function Membership() {
               {selectedPlan && (
                 <div className="mt-4 flex flex-col sm:flex-row justify-center gap-3">
                   <button
-                    onClick={() => processMembershipCheckout('mobile_money')}
-                    className={`px-4 py-2 text-sm ${CTA_PRIMARY} bg-green-700 hover:bg-green-800`}
+                    onClick={() => processMembershipCheckout()}
+                    disabled={busy}
+                    className={`px-8 py-3 text-sm font-bold tracking-wide uppercase ${CTA_PRIMARY} disabled:cursor-not-allowed disabled:opacity-50`}
                   >
-                    Pay {selectedPlan.price} with Mobile Money
-                  </button>
-                  <button
-                    onClick={() => processMembershipCheckout('bank_card')}
-                    className={`px-4 py-2 text-sm ${CTA_PRIMARY}`}
-                  >
-                    Pay {selectedPlan.price} with Bank Card
+                    {busy ? 'Connecting...' : `Pay ${selectedPlan.price} with Paystack`}
                   </button>
                 </div>
               )}
@@ -158,7 +173,7 @@ export default function Membership() {
             Choose your plan
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">
-            Select a tier, sign in or create an account, then confirm payment securely via Mobile Money or Bank Card.
+            Select a tier, sign in or create an account, then confirm payment securely via Paystack.
           </p>
           <div className="mt-12 grid gap-6 lg:grid-cols-3">
             {tiers.map((tier) => (
