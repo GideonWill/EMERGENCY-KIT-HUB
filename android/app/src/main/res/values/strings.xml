@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Tobin Emergency Kit Hub</string>
+    <string name="title_activity_main">Tobin Emergency Kit Hub</string>
+    <string name="package_name">com.tobin.hub</string>
+    <string name="custom_url_scheme">com.tobin.hub</string>
+</resources>
