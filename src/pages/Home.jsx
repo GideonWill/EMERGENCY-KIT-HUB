@@ -11,7 +11,6 @@ import { COMPANY_NAME, CTA_PRIMARY, CTA_SECONDARY } from '../config/brand'
 import { apiFetch } from '../lib/api'
 
 const collectionLinks = [
-  { to: '/shop?collection=bestsellers', label: 'Best sellers' },
   { to: '/shop', label: 'Shop all' },
   { to: '/wellness', label: 'Wellness Hub' },
   { to: '/manual', label: 'Digital Manual' },
@@ -249,23 +248,21 @@ export default function Home() {
       </section>
 
       <ContentSection
-        eyebrow="Clinical standards"
-        title="Preparedness meets everyday care"
+        eyebrow="Our Mission"
+        title="Born from Necessity"
         body={
           <>
             <p>
-              {COMPANY_NAME} brings together clean medical e-commerce design with forest-green accents,
-              generous whitespace, and serif headlines — so your family can shop and plan with confidence.
+              {COMPANY_NAME} was founded on the belief that preparedness shouldn't be a luxury. The idea for our emergency hubs came from witnessing the critical gaps in immediate medical response across both urban and rural environments.
             </p>
             <p>
-              Replace this copy with your value proposition, compliance language, and trust badges as your
-              catalog goes live.
+              By standardizing professional-grade supplies and integrating them with digital guidance, we ensure that every Ghanaian home, school, and workplace is equipped to save lives in those first vital moments of a crisis.
             </p>
           </>
         }
-        cta={{ to: '/about', label: 'Our story' }}
-        image="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1000&q=80"
-        imageAlt="Healthcare professional with patient"
+        cta={{ to: '/about', label: 'Read our full story' }}
+        image="/hero section home.png"
+        imageAlt="TOBINCO Medical Emergency Kit"
         imageLeft
         mutedBg
       />
@@ -305,9 +302,8 @@ export default function Home() {
             {team.map((member) => (
               <article
                 key={member.name}
-                className="overflow-hidden border border-slate-200 bg-white shadow-sm"
+                className="overflow-hidden border border-slate-200 bg-white shadow-sm pt-8"
               >
-                <img src={member.image} alt="" className={`aspect-[4/5] w-full object-cover ${member.objectPosition || 'object-center'}`} />
                 <div className="border-t border-slate-200 p-5">
                   <h3 className="font-display text-xl text-slate-900">{member.name}</h3>
                   <p className="text-sm font-semibold text-brand-700">{member.role}</p>
@@ -326,19 +322,19 @@ export default function Home() {
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link
               to="/shop"
-              className="inline-flex border-2 border-amber-400 bg-amber-400 px-8 py-3.5 text-sm font-semibold text-brand-950 transition-all duration-300 ease-out hover:border-amber-300 hover:bg-amber-300"
+              className="inline-flex border border-amber-400 bg-amber-400 px-8 py-3.5 text-sm font-semibold text-brand-950 transition-all duration-300 ease-out hover:border-amber-300 hover:bg-amber-300"
             >
               Shop all products
             </Link>
             <Link
               to="/contact"
-              className="inline-flex border-2 border-white px-8 py-3.5 text-sm font-semibold text-white transition-all duration-300 ease-out hover:bg-white/15"
+              className="inline-flex border border-white px-8 py-3.5 text-sm font-semibold text-white transition-all duration-300 ease-out hover:bg-white/15"
             >
               Contact us
             </Link>
             <Link
               to="/consultation"
-              className="inline-flex border-2 border-white px-8 py-3.5 text-sm font-semibold text-white transition-all duration-300 ease-out hover:bg-white/15"
+              className="inline-flex border border-white px-8 py-3.5 text-sm font-semibold text-white transition-all duration-300 ease-out hover:bg-white/15"
             >
               Book consultation
             </Link>

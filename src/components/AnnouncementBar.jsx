@@ -11,7 +11,7 @@ export default function AnnouncementBar() {
       <span className="text-brand-100/90">Preparedness &amp; wellness</span>
       <Link
         to="/shop"
-        className="inline-flex border-2 border-amber-400 bg-amber-400 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide text-brand-950 shadow-sm transition hover:border-amber-300 hover:bg-amber-300 sm:text-xs"
+        className="inline-flex border border-amber-400 bg-amber-400 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide text-brand-950 shadow-sm transition hover:border-amber-300 hover:bg-amber-300 sm:text-xs"
       >
         Shop catalog
       </Link>

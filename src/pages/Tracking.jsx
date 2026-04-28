@@ -112,7 +112,7 @@ export default function Tracking() {
               placeholder="Enter your Order ID (e.g. ORD-80123)"
               value={orderId}
               onChange={(e) => setOrderId(e.target.value)}
-              className="flex-1 rounded-none border border-slate-200 px-5 py-4 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-slate-50"
+              className="flex-1 rounded-none border border-slate-200 px-5 py-4 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/10 hover:border-slate-300 bg-slate-50"
             />
             <button
               type="submit"

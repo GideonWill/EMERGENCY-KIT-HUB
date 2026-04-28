@@ -5,13 +5,9 @@ import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { COMPANY_NAME, CTA_PRIMARY, CTA_SECONDARY, LOGO_SRC } from '../config/brand'
 import LogoutConfirmModal from './LogoutConfirmModal'
+import LoadingOverlay from './LoadingOverlay'
 
 const shopCollections = [
-  {
-    to: '/shop?collection=bestsellers',
-    label: 'Best sellers',
-    hint: 'Customer favorites & kits',
-  },
   { to: '/shop', label: 'Shop all', hint: 'Full catalog' },
   {
     to: '/shop?collection=supplements',
@@ -22,7 +18,7 @@ const shopCollections = [
   { to: '/institutional', label: 'Institutional solutions', hint: 'Bulk care for organizations' },
   { to: '/institutional#schools', label: 'Schools & Education', hint: 'Campus safety solutions' },
   { to: '/institutional#corporate', label: 'Workplaces & Offices', hint: 'Employee wellness kits' },
-  { to: '/institutional#industrial', label: 'Industrial & Mining', hint: 'Heavy-duty trauma kits' },
+  { to: '/institutional#industrial-focus', label: 'Industrial & Mining', hint: 'Heavy-duty trauma kits' },
 ]
 
 const navClass = ({ isActive }) =>
@@ -39,6 +35,7 @@ export default function Navbar() {
   const [shopOpen, setShopOpen] = useState(false)
   const [careOpen, setCareOpen] = useState(false)
   const [logoutModalOpen, setLogoutModalOpen] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? 'hidden' : ''
@@ -134,11 +131,11 @@ export default function Navbar() {
                     Bundle essentials for home and travel. Demo promotion copy.
                   </p>
                   <Link
-                    to="/shop?collection=bestsellers"
+                    to="/shop"
                     className={`mt-6 inline-flex w-full items-center justify-center py-3 text-center text-xs font-bold uppercase tracking-wide ${CTA_PRIMARY}`}
                     onClick={() => setShopOpen(false)}
                   >
-                    Shop best sellers
+                    Shop all products
                   </Link>
                 </div>
               </div>
@@ -492,11 +489,17 @@ export default function Navbar() {
         </div>
       )}
 
+      {loggingOut && <LoadingOverlay message="Signing you out securely..." />}
+      
       <LogoutConfirmModal
         isOpen={logoutModalOpen}
-        onConfirm={() => {
-          logout()
+        onConfirm={async () => {
           setLogoutModalOpen(false)
+          setLoggingOut(true)
+          // Simulate a small delay for realistic professional feel
+          await new Promise(resolve => setTimeout(resolve, 1200))
+          logout()
+          setLoggingOut(false)
         }}
         onCancel={() => setLogoutModalOpen(false)}
       />

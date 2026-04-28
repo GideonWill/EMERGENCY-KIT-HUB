@@ -77,7 +77,7 @@ export default function Register() {
                 required
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                className="mt-2 w-full rounded-none border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
+                className="mt-2 w-full rounded-none border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
               />
             </div>
             <div>
@@ -90,7 +90,7 @@ export default function Register() {
                 required
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                className="mt-2 w-full rounded-none border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
+                className="mt-2 w-full rounded-none border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
               />
             </div>
           </div>
@@ -105,7 +105,7 @@ export default function Register() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
+              className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
             />
           </div>
           <div>
@@ -117,7 +117,7 @@ export default function Register() {
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
+              className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -134,7 +134,7 @@ export default function Register() {
                   minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-none border border-slate-200 px-4 py-3.5 pr-12 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
+                  className="w-full rounded-none border border-slate-200 px-4 py-3.5 pr-12 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
                 />
                 <button
                   type="button"
@@ -162,7 +162,7 @@ export default function Register() {
                   minLength={8}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-none border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
+                  className="w-full rounded-none border border-slate-200 px-4 py-3.5 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/10 hover:border-slate-300 bg-white"
                 />
               </div>
             </div>

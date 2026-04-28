@@ -72,7 +72,7 @@ export default function Contact() {
                     id="name"
                     name="name"
                     required
-                    className="mt-1 w-full border border-slate-300 px-4 py-3 text-slate-900 outline-none ring-brand-600 focus:border-brand-600 focus:ring-2"
+                    className="mt-1 w-full border border-slate-300 px-4 py-3 text-slate-900 outline-none ring-brand-600 focus:border-brand-600 focus:ring-1"
                   />
                 </div>
                 <div>
@@ -84,7 +84,7 @@ export default function Contact() {
                     name="email"
                     type="email"
                     required
-                    className="mt-1 w-full border border-slate-300 px-4 py-3 text-slate-900 outline-none ring-brand-600 focus:border-brand-600 focus:ring-2"
+                    className="mt-1 w-full border border-slate-300 px-4 py-3 text-slate-900 outline-none ring-brand-600 focus:border-brand-600 focus:ring-1"
                   />
                 </div>
                 <div>
@@ -96,7 +96,7 @@ export default function Contact() {
                     name="topic"
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
-                    className="mt-1 w-full border border-slate-300 px-4 py-3 text-slate-900 outline-none ring-brand-600 focus:border-brand-600 focus:ring-2"
+                    className="mt-1 w-full border border-slate-300 px-4 py-3 text-slate-900 outline-none ring-brand-600 focus:border-brand-600 focus:ring-1"
                   >
                     <option>General question</option>
                     <option>Order support</option>
@@ -114,7 +114,7 @@ export default function Contact() {
                     name="message"
                     rows={4}
                     required
-                    className="mt-1 w-full border border-slate-300 px-4 py-3 text-slate-900 outline-none ring-brand-600 focus:border-brand-600 focus:ring-2"
+                    className="mt-1 w-full border border-slate-300 px-4 py-3 text-slate-900 outline-none ring-brand-600 focus:border-brand-600 focus:ring-1"
                   />
                 </div>
                 <button

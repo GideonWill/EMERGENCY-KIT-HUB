@@ -21,19 +21,19 @@ export default function SpiritualGuidance() {
           <div className="mt-8 flex flex-wrap gap-3">
             <a
               href="#counsellors"
-              className="inline-flex border-2 border-amber-400 bg-amber-400 px-6 py-3 text-sm font-semibold text-brand-950 shadow-md transition hover:border-amber-300 hover:bg-amber-300"
+              className="inline-flex border border-amber-400 bg-amber-400 px-6 py-3 text-sm font-semibold text-brand-950 shadow-md transition hover:border-amber-300 hover:bg-amber-300"
             >
               Meet our counsellors
             </a>
             <Link
               to="/consultation"
-              className="inline-flex border-2 border-white/80 px-6 py-3 text-sm font-semibold text-white transition-all duration-300 ease-out hover:bg-white/10"
+              className="inline-flex border border-white/80 px-6 py-3 text-sm font-semibold text-white transition-all duration-300 ease-out hover:bg-white/10"
             >
               Clinical consultation
             </Link>
             <a
               href="#book-spiritual"
-              className="inline-flex border-2 border-white/80 px-6 py-3 text-sm font-semibold text-white transition-all duration-300 ease-out hover:bg-white/10"
+              className="inline-flex border border-white/80 px-6 py-3 text-sm font-semibold text-white transition-all duration-300 ease-out hover:bg-white/10"
             >
               Book spiritual session
             </a>

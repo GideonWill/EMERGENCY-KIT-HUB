@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import MainLayout from './layouts/MainLayout'
+import ScrollToAnchor from './components/ScrollToAnchor'
 import Home from './pages/Home'
 import Shop from './pages/Shop'
 import ProductDetails from './pages/ProductDetails'
@@ -22,7 +23,9 @@ import ResetPassword from './pages/ResetPassword'
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <ScrollToAnchor />
+      <Routes>
       <Route path="/admin/orders" element={<AdminDashboard />} />
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
@@ -45,5 +48,6 @@ export default function App() {
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
+    </>
   )
 }

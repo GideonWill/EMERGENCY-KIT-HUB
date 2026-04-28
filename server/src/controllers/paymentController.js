@@ -199,6 +199,24 @@ export async function handlePaystackWebhook(req, res) {
             },
           })
           
+          // Check for subscriptions in order items
+          const subItem = order.items.find(item => 
+            item.name.toLowerCase().includes('subscription') || 
+            item.name.toLowerCase().includes('plan') || 
+            item.name.toLowerCase().includes('membership')
+          )
+
+          if (subItem) {
+            await Subscription.upsertByStripeId({
+              userId: order.user,
+              planName: subItem.name,
+              stripeSubscriptionId: reference,
+              status: 'active',
+              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Default 30 days
+            })
+            console.log(`Subscription activated for User ${order.user} based on Order ${orderId}`)
+          }
+          
           console.log(`Order ${orderId} marked as PAID via Paystack Reference ${reference}`)
         }
       }

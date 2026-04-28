@@ -11,11 +11,11 @@ export default function Institutional() {
         eyebrow="Partnerships & Bulk Solutions"
         title="Standardizing safety for"
         titleAccent="Ghanaian Institutions"
-        subtitle={`Empower your school, workplace, or industrial site with physician-grade emergency kits customized for your specific safety requirements. Trusted by ${COMPANY_NAME}.`}
+        subtitle={`Empower your school, workplace, or industrial site with physician-grade emergency kits customized for your specific safety requirements. Trusted by ${COMPANY_NAME} partners across Accra and beyond.`}
         primaryCta={{ to: '/contact?topic=institutional', label: 'Request institutional quote' }}
         secondaryCta={{ to: '/shop', label: 'View standard kits' }}
-        image="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80"
-        imageAlt="Modern corporate office environment"
+        image="/gh_corporate.png"
+        imageAlt="Modern corporate office environment in Ghana"
       />
 
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -109,11 +109,32 @@ export default function Institutional() {
           </>
         }
         cta={{ to: '/contact', label: 'Consult with a specialist' }}
-        image="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1000&q=80"
-        imageAlt="Quality control in manufacturing"
+        image="/inst.jpg"
+        imageAlt="Modern industrial solutions in action"
         imageLeft
         mutedBg
       />
+
+      <div id="industrial-focus" className="bg-slate-50 py-16 scroll-mt-20">
+        <ContentSection
+          eyebrow="Specialized Care"
+          title="Heavy Industry & Mining"
+          body={
+            <>
+              <p>
+                For the extraction and industrial sectors, we provide ruggedized kits designed to withstand extreme environments. From mining sites in Obuasi to industrial zones in Tema, we standardization safety protocols.
+              </p>
+              <p>
+                Our trauma-focused kits are optimized for the specific orthopedic and respiratory risks common in Ghanaian heavy industry.
+              </p>
+            </>
+          }
+          cta={{ to: '/shop', label: 'Shop for emergency kits' }}
+          image="/gh_industrial.png"
+          imageAlt="Ghanaian industrial and mining professionals"
+          mutedBg={false}
+        />
+      </div>
 
       <section className="bg-brand-900 py-16 text-center text-white">
         <div className="mx-auto max-w-3xl px-4">

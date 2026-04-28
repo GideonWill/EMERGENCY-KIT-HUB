@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Hero from '../components/Hero'
 import { useAuth } from '../context/AuthContext'
 import { getApiBase, apiFetch, createSubscriptionCheckoutSession } from '../lib/api'
@@ -42,20 +42,10 @@ const tiers = [
 
 export default function Membership() {
   const navigate = useNavigate()
-  const { hash } = useLocation()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isSubscriber } = useAuth()
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState(null)
-
-  useEffect(() => {
-    if (hash === '#plans') {
-      const el = document.getElementById('plans')
-      if (el) {
-        setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100)
-      }
-    }
-  }, [hash])
 
   async function processMembershipCheckout() {
     setMsg('')
@@ -145,17 +135,26 @@ export default function Membership() {
             />
           ) : (
             <p className="border border-brand-200 bg-brand-50 px-4 py-3 text-center text-sm text-brand-900">
-              Signed in — choose a plan below, then complete your membership checkout.
-              {selectedPlan && (
-                <div className="mt-4 flex flex-col sm:flex-row justify-center gap-3">
-                  <button
-                    onClick={() => processMembershipCheckout()}
-                    disabled={busy}
-                    className={`px-8 py-3 text-sm font-bold tracking-wide uppercase ${CTA_PRIMARY} disabled:cursor-not-allowed disabled:opacity-50`}
-                  >
-                    {busy ? 'Connecting...' : `Pay ${selectedPlan.price} with Paystack`}
-                  </button>
-                </div>
+              {isSubscriber ? (
+                <span className="flex items-center justify-center gap-2 font-bold uppercase tracking-widest text-brand-700">
+                  <span className="h-2 w-2 rounded-full bg-brand-500 animate-pulse" />
+                  Your Premium Membership is Active
+                </span>
+              ) : (
+                <>
+                  Signed in — choose a plan below, then complete your membership checkout.
+                  {selectedPlan && (
+                    <div className="mt-4 flex flex-col sm:flex-row justify-center gap-3">
+                      <button
+                        onClick={() => processMembershipCheckout()}
+                        disabled={busy}
+                        className={`px-8 py-3 text-sm font-bold tracking-wide uppercase ${CTA_PRIMARY} disabled:cursor-not-allowed disabled:opacity-50`}
+                      >
+                        {busy ? 'Connecting...' : `Pay ${selectedPlan.price} with Paystack`}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </p>
           )}
@@ -207,7 +206,7 @@ export default function Membership() {
                     tier.highlighted ? CTA_PRIMARY : CTA_SECONDARY
                   } disabled:opacity-60`}
                 >
-                  {selectedPlan?.id === tier.id ? 'Selected' : tier.cta}
+                  {isSubscriber ? 'Active Plan' : selectedPlan?.id === tier.id ? 'Selected' : tier.cta}
                 </button>
               </div>
             ))}

@@ -6,7 +6,6 @@ const footerColumns = [
     title: 'Shop',
     links: [
       { to: '/shop', label: 'All products' },
-      { to: '/shop?collection=bestsellers', label: 'Best sellers' },
       { to: '/membership', label: 'Membership' },
       { to: '/institutional', label: 'Institutional solutions' },
     ],
@@ -46,7 +45,7 @@ export default function Footer() {
           <div className="lg:col-span-1">
             <Link
               to="/"
-              className="inline-flex max-w-[260px] rounded-md border border-slate-200/90 bg-white p-2.5 shadow-sm"
+              className="inline-flex max-w-[260px] p-0"
             >
               <img
                 src={LOGO_SRC}

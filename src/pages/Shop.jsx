@@ -36,9 +36,6 @@ export default function Shop() {
 
   const filtered = useMemo(() => {
     if (!collection) return catalog
-    if (collection === 'bestsellers') {
-      return catalog.filter((p) => p.badge === 'Best Seller')
-    }
     if (collection === 'supplements') {
       return catalog.filter((p) => !String(p.sku).includes('KIT'))
     }
@@ -46,11 +43,9 @@ export default function Shop() {
   }, [collection, catalog])
 
   const title =
-    collection === 'bestsellers'
-      ? 'Best sellers'
-      : collection === 'supplements'
-        ? 'Supplements'
-        : 'All products'
+    collection === 'supplements'
+      ? 'Supplements'
+      : 'All products'
 
   return (
     <div className="bg-slate-50">

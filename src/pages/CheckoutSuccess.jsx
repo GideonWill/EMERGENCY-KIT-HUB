@@ -10,12 +10,14 @@ export default function CheckoutSuccess() {
   const flowMembership = searchParams.get('flow') === 'membership'
   const orderId = searchParams.get('orderId')
   const { clear } = useCart()
+  const { refreshUser } = useAuth()
   
   const [loading, setLoading] = useState(!isDemo && !!orderId)
   const [order, setOrder] = useState(null)
 
   useEffect(() => {
     clear()
+    refreshUser() // Immediately update user state (premium status, etc)
     
     if (!isDemo && orderId) {
       async function verifyOrder() {
@@ -69,6 +71,15 @@ export default function CheckoutSuccess() {
       <h1 className="mt-3 font-display text-3xl text-slate-900">
         {flowMembership ? 'Membership Activated' : 'Payment Successful'}
       </h1>
+
+      {flowMembership && (
+        <div className="mt-4 flex justify-center">
+          <span className="inline-flex items-center gap-1.5 bg-amber-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-amber-700 border border-amber-200 shadow-sm animate-in zoom-in duration-500">
+            <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+            Premium Care Member
+          </span>
+        </div>
+      )}
 
       <div className="mt-6 rounded-sm border border-slate-100 bg-slate-50/50 p-6">
         <p className="text-base font-medium text-slate-900">

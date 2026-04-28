@@ -240,8 +240,35 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+      <style>{`
+        @media print {
+          /* Hide everything by default */
+          body * {
+            visibility: hidden;
+          }
+          /* Show only the receipt and its children */
+          #printable-receipt, #printable-receipt * {
+            visibility: visible;
+          }
+          /* Position the receipt at the top left of the printed page */
+          #printable-receipt {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          /* Hide the print button itself and other interactive elements within the receipt */
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
       {/* Sidebar */}
-      <div className="w-full md:w-64 bg-slate-900 text-slate-300 md:shrink-0 flex flex-col">
+      <div className="w-full md:w-64 bg-slate-900 text-slate-300 md:shrink-0 flex flex-col no-print">
         <div className="p-6">
           <h2 className="text-xl font-display text-white tracking-wide">SysAdmin</h2>
           <p className="text-xs text-slate-500 uppercase tracking-wider mt-1">Management Portal</p>
@@ -548,12 +575,12 @@ export default function AdminDashboard() {
             <div className="p-4 sm:p-8 max-w-4xl mx-auto">
               <button 
                 onClick={() => setSelectedOrder(null)}
-                className="text-brand-700 hover:underline mb-6 text-sm font-semibold"
+                className="text-brand-700 hover:underline mb-6 text-sm font-semibold no-print"
               >
                 &larr; Back to Order List
               </button>
 
-              <div className="bg-white border border-slate-200 shadow-sm p-8">
+              <div id="printable-receipt" className="bg-white border border-slate-200 shadow-sm p-8">
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4 border-b border-slate-200 pb-6">
                   <div>
                     <h1 className="text-2xl font-display text-slate-900">Receipt / Packing Slip</h1>
@@ -569,7 +596,7 @@ export default function AdminDashboard() {
                         Subscription
                       </span>
                     )}
-                    <div className="mt-4 flex flex-col gap-2">
+                    <div className="mt-4 flex flex-col gap-2 no-print">
                       {(selectedOrder.status === 'pending' || selectedOrder.status === 'paid') && (
                         <button onClick={() => updateStatus(selectedOrder.id, 'shipped')} className={`text-xs ${CTA_PRIMARY} py-1.5 px-4`}>
                           Mark as Shipped
@@ -633,7 +660,7 @@ export default function AdminDashboard() {
                   </table>
                 </div>
 
-                <div className="bg-slate-50 p-4 border border-slate-200 text-center text-sm text-slate-500">
+                <div className="bg-slate-50 p-4 border border-slate-200 text-center text-sm text-slate-500 no-print">
                   <p>This is a formal packing slip for bulk distribution logistics.</p>
                   <button className="mt-2 text-brand-700 font-semibold underline" onClick={() => window.print()}>
                     Print Receipt / Packing Slip
