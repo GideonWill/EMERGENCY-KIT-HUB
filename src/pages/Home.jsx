@@ -307,7 +307,7 @@ export default function Home() {
                 key={member.name}
                 className="overflow-hidden border border-slate-200 bg-white shadow-sm"
               >
-                <img src={member.image} alt="" className="aspect-square w-full object-cover object-top" />
+                <img src={member.image} alt="" className={`aspect-[4/5] w-full object-cover ${member.objectPosition || 'object-center'}`} />
                 <div className="border-t border-slate-200 p-5">
                   <h3 className="font-display text-xl text-slate-900">{member.name}</h3>
                   <p className="text-sm font-semibold text-brand-700">{member.role}</p>
