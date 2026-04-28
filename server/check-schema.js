@@ -3,8 +3,9 @@ import { query } from './src/config/db.js';
 
 async function check() {
   try {
-    const { rows } = await query("SELECT column_name FROM information_schema.columns WHERE table_name = 'products'");
-    console.log('Columns:', rows.map(r => r.column_name));
+    await query("ALTER TABLE orders DROP CONSTRAINT orders_status_check;");
+    await query("ALTER TABLE orders ADD CONSTRAINT orders_status_check CHECK (status IN ('pending', 'paid', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'));");
+    console.log('Constraint updated successfully');
     process.exit(0);
   } catch (err) {
     console.error(err);

@@ -1,50 +1,54 @@
 import { Router } from 'express'
 import multer from 'multer'
 import path from 'path'
+import fs from 'fs'
 import { protect, adminOnly } from '../middleware/auth.js'
 
 const router = Router()
 
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, 'uploads/')
-  },
-  filename(req, file, cb) {
-    cb(
-      null,
-      `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`
-    )
-  },
-})
-
-function checkFileType(file, cb) {
-  const filetypes = /jpg|jpeg|png/
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase())
-  const mimetype = filetypes.test(file.mimetype)
-
-  if (extname && mimetype) {
-    return cb(null, true)
-  } else {
-    cb('Images only!')
-  }
-}
-
+// Use memory storage (works in both local dev and Vercel serverless)
 const upload = multer({
-  storage,
-  fileFilter: function (req, file, cb) {
-    checkFileType(file, cb)
+  storage: multer.memoryStorage(),
+  fileFilter(req, file, cb) {
+    const filetypes = /jpg|jpeg|png|webp/
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase())
+    const mimetype = filetypes.test(file.mimetype)
+    if (extname && mimetype) return cb(null, true)
+    cb('Images only!')
   },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
 })
 
-router.post('/', protect, adminOnly, upload.single('image'), (req, res) => {
+router.post('/', protect, adminOnly, upload.single('image'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: 'No file uploaded' })
   }
-  const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
-  res.json({
-    success: true,
-    url,
-  })
+
+  try {
+    // ── Production: Vercel Blob Storage ──
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      const { put } = await import('@vercel/blob')
+      const filename = `products/${Date.now()}-${req.file.originalname}`
+      const blob = await put(filename, req.file.buffer, {
+        access: 'public',
+        contentType: req.file.mimetype,
+      })
+      return res.json({ success: true, url: blob.url })
+    }
+
+    // ── Local dev: write to disk ──
+    const uploadsDir = path.join(process.cwd(), 'server', 'uploads')
+    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true })
+
+    const filename = `image-${Date.now()}${path.extname(req.file.originalname)}`
+    fs.writeFileSync(path.join(uploadsDir, filename), req.file.buffer)
+
+    const url = `${req.protocol}://${req.get('host')}/uploads/${filename}`
+    res.json({ success: true, url })
+  } catch (err) {
+    console.error('Upload error:', err)
+    res.status(500).json({ success: false, message: 'Upload failed' })
+  }
 })
 
 export default router

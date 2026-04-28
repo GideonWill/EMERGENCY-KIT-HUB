@@ -24,8 +24,7 @@ const __dirname = path.dirname(__filename)
 const requiredEnv = ['DATABASE_URL', 'JWT_SECRET']
 for (const key of requiredEnv) {
   if (!process.env[key]) {
-    console.error(`FATAL: Missing environment variable ${key}. Copy server/.env.example to server/.env`)
-    process.exit(1)
+    throw new Error(`FATAL: Missing environment variable ${key}. Set it in Vercel Dashboard or copy server/.env.example to server/.env`)
   }
 }
 
@@ -79,8 +78,11 @@ app.use('/api/appointments', appointmentRoutes)
 app.use('/api/admin/paystack', paystackRoutes)
 app.use('/api/upload', uploadRoutes)
 
-const uploadsPath = path.join(path.dirname(__dirname), 'uploads')
-app.use('/uploads', express.static(uploadsPath))
+// Serve uploaded files from disk (local dev only; production uses Vercel Blob CDN URLs)
+if (!process.env.VERCEL) {
+  const uploadsPath = path.join(path.dirname(__dirname), 'uploads')
+  app.use('/uploads', express.static(uploadsPath))
+}
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Not found' })
@@ -95,15 +97,20 @@ app.use((err, req, res, _next) => {
   })
 })
 
-const port = Number(process.env.PORT) || 5000
+// Export for Vercel Serverless Functions
+export default app
 
-connectDb()
-  .then(() => {
-    app.listen(port, () => {
-      console.log(`API listening on http://localhost:${port}`)
+// Only start listening when running locally (not on Vercel)
+if (!process.env.VERCEL) {
+  const port = Number(process.env.PORT) || 5000
+  connectDb()
+    .then(() => {
+      app.listen(port, () => {
+        console.log(`API listening on http://localhost:${port}`)
+      })
     })
-  })
-  .catch((e) => {
-    console.error('Database connection failed', e)
-    process.exit(1)
-  })
+    .catch((e) => {
+      console.error('Database connection failed', e)
+      process.exit(1)
+    })
+}
