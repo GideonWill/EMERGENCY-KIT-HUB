@@ -84,3 +84,29 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
   }
   res.json({ success: true, data: order })
 })
+
+export const trackOrder = asyncHandler(async (req, res) => {
+  const orderId = req.params.id.trim().toUpperCase()
+  // Search by string ID or numeric ID if it's a number
+  const numericId = parseInt(orderId.replace('ORD-', ''), 10)
+  
+  let order = null
+  if (!isNaN(numericId)) {
+    order = await Order.findById(numericId)
+  }
+  
+  if (!order) {
+    return res.status(404).json({ success: false, message: 'Order not found' })
+  }
+  
+  // Return a safe subset of order data for public tracking
+  res.json({
+    success: true,
+    data: {
+      id: order.id,
+      status: order.status,
+      createdAt: order.createdAt,
+      items: order.items.map(i => ({ name: i.name, quantity: i.quantity, unitPriceCents: i.unitPriceCents }))
+    }
+  })
+})

@@ -90,6 +90,15 @@ export default function AdminDashboard() {
   }, [])
 
   const formatCurrency = (cents) => (cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  
+  const isSubscriptionOrder = (order) => {
+    if (!order.items) return false
+    return order.items.some(item => 
+      item.name.toLowerCase().includes('subscription') || 
+      item.name.toLowerCase().includes('plan') || 
+      item.name.toLowerCase().includes('membership')
+    )
+  }
 
   const updateStatus = async (id, newStatus) => {
     // Optimistic update
@@ -555,6 +564,11 @@ export default function AdminDashboard() {
                     <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${statusColors[selectedOrder.status]}`}>
                       {selectedOrder.status}
                     </span>
+                    {isSubscriptionOrder(selectedOrder) && (
+                      <span className="ml-2 inline-flex px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-200 shadow-sm">
+                        Subscription
+                      </span>
+                    )}
                     <div className="mt-4 flex flex-col gap-2">
                       {(selectedOrder.status === 'pending' || selectedOrder.status === 'paid') && (
                         <button onClick={() => updateStatus(selectedOrder.id, 'shipped')} className={`text-xs ${CTA_PRIMARY} py-1.5 px-4`}>
@@ -672,9 +686,16 @@ export default function AdminDashboard() {
                           {formatCurrency(order.totalCents)}
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColors[order.status]}`}>
-                            {order.status}
-                          </span>
+                          <div className="flex flex-col items-center gap-1">
+                            <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColors[order.status]}`}>
+                              {order.status}
+                            </span>
+                            {isSubscriptionOrder(order) && (
+                              <span className="inline-flex px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-100">
+                                Subscription
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <button 

@@ -41,27 +41,23 @@ export default function Tracking() {
     }
   }, [isAuthenticated, user])
 
-  const performSearch = (searchId) => {
+  const performSearch = async (searchId) => {
     if (!searchId.trim()) return
     setLoading(true)
     setError('')
     
-    setTimeout(() => {
-      setLoading(false)
-      const savedData = localStorage.getItem('admin_orders')
-      let foundLocal = null
-      if (savedData) {
-        const allOrders = JSON.parse(savedData)
-        foundLocal = allOrders.find(o => o.id === searchId.trim().toUpperCase())
-      }
-
-      if (foundLocal) {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/orders/track/${searchId.trim()}`)
+      const data = await res.json()
+      
+      if (data.success && data.data) {
+        const found = data.data
         setTrackedOrder({
-          id: foundLocal.id,
-          date: new Date(foundLocal.date).toLocaleDateString(),
+          id: found.id,
+          date: new Date(found.createdAt).toLocaleDateString(),
           expectedDelivery: 'Expected in 3-5 days',
-          items: foundLocal.items.map(i => ({ name: i.name, quantity: i.qty, price: i.price })),
-          statusIndex: getStatusIndex(foundLocal.status)
+          items: found.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.unitPriceCents / 100 })),
+          statusIndex: getStatusIndex(found.status.charAt(0).toUpperCase() + found.status.slice(1))
         })
       } else if (searchId.trim().toUpperCase() === MOCK_ORDER_DATA.id || searchId.trim() === 'demo') {
         setTrackedOrder(MOCK_ORDER_DATA)
@@ -69,7 +65,12 @@ export default function Tracking() {
         setError('Order not found. Please double-check your Order ID.')
         setTrackedOrder(null)
       }
-    }, 800)
+    } catch (err) {
+      console.error(err)
+      setError('Connection error. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleTrack = (e) => {
@@ -91,7 +92,7 @@ export default function Tracking() {
           </p>
         </div>
 
-        <div className="bg-white/95 backdrop-blur-md shadow-2xl shadow-slate-200/50 rounded-2xl p-6 sm:p-10">
+        <div className="bg-white shadow-2xl shadow-slate-200/50 rounded-none p-6 sm:p-10">
           <form onSubmit={handleTrack} className="flex flex-col sm:flex-row gap-3">
             <label htmlFor="order-id" className="sr-only">Order ID</label>
             <input
@@ -100,12 +101,12 @@ export default function Tracking() {
               placeholder="Enter your Order ID (e.g. ORD-80123)"
               value={orderId}
               onChange={(e) => setOrderId(e.target.value)}
-              className="flex-1 rounded-xl border border-slate-200 px-5 py-4 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-slate-50"
+              className="flex-1 rounded-none border border-slate-200 px-5 py-4 text-slate-900 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-slate-300 bg-slate-50"
             />
             <button
               type="submit"
               disabled={loading || !orderId.trim()}
-              className={`px-8 py-4 rounded-xl text-sm font-semibold active:scale-[0.98] transition-all duration-200 ${CTA_PRIMARY} shadow-lg shadow-brand-500/30 hover:shadow-brand-500/40 whitespace-nowrap`}
+              className={`px-8 py-4 rounded-none text-sm font-semibold active:scale-[0.98] transition-all duration-200 ${CTA_PRIMARY} shadow-lg shadow-brand-500/30 hover:shadow-brand-500/40 whitespace-nowrap`}
             >
               {loading ? 'Locating…' : 'Track Order'}
             </button>
@@ -252,21 +253,17 @@ export default function Tracking() {
                           performSearch(order.id)
                           window.scrollTo({ top: 300, behavior: 'smooth' })
                         }} 
-                        className="flex-1 py-3 text-xs font-bold bg-white border border-slate-200 rounded-xl hover:border-brand-500 hover:text-brand-700 transition shadow-sm text-slate-700"
+                        className="flex-1 py-3 text-xs font-bold bg-white border border-slate-200 rounded-none hover:border-brand-500 hover:text-brand-700 transition shadow-sm text-slate-700"
                       >
                         Track Details
                       </button>
                       {order.status === 'Pending' && (
                         <button onClick={() => {
                           if(window.confirm('Are you sure you want to cancel this order?')) {
-                            const saved = JSON.parse(localStorage.getItem('admin_orders') || '[]')
-                            const updated = saved.filter(o => o.id !== order.id)
-                            localStorage.setItem('admin_orders', JSON.stringify(updated))
-                            setMyOrders(updated.filter(o => o.customer?.email === user.email))
-                            if (trackedOrder?.id === order.id) setTrackedOrder(null)
-                            window.dispatchEvent(new Event('storage'))
+                            // Cancel logic should be handled by API
+                            alert('Please contact support to cancel a processing order.')
                           }
-                        }} className="flex-1 py-3 text-xs font-bold bg-white text-red-600 border border-slate-200 rounded-xl hover:bg-red-50 hover:border-red-200 transition shadow-sm">
+                        }} className="flex-1 py-3 text-xs font-bold bg-white text-red-600 border border-slate-200 rounded-none hover:bg-red-50 hover:border-red-200 transition shadow-sm">
                           Cancel
                         </button>
                       )}
