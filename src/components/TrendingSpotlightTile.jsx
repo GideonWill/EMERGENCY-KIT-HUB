@@ -32,7 +32,7 @@ export default function TrendingSpotlightTile({ product }) {
           ★ {rating}{' '}
           <span className="text-slate-400">({reviews.toLocaleString()} reviews)</span>
         </p>
-        <p className="mt-2 text-sm font-semibold text-slate-900">${price.toFixed(2)}</p>
+        <p className="mt-2 text-sm font-semibold text-slate-900">GH₵{price.toFixed(2)}</p>
       </div>
     </Link>
   )

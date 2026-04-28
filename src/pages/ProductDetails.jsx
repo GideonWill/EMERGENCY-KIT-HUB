@@ -170,7 +170,7 @@ export default function ProductDetails() {
 
             <div className="mt-6 flex flex-wrap items-baseline gap-3 border-b border-slate-200 pb-6">
               <span className="text-3xl font-semibold tracking-tight text-slate-900">GH₵{price.toFixed(2)}</span>
-              <span className="text-sm text-slate-500">GHS · Demo pricing</span>
+              <span className="text-sm text-slate-500">GHS</span>
             </div>
 
             <ul className="mt-6 space-y-2 text-sm text-slate-700">
