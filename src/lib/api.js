@@ -1,7 +1,15 @@
 /** Base URL for Express API — set in `.env` as VITE_API_URL (no trailing slash) */
 export function getApiBase() {
-  const raw = import.meta.env.VITE_API_URL
+  let raw = import.meta.env.VITE_API_URL
   if (!raw || typeof raw !== 'string') return ''
+  
+  // Fix for mobile/external devices: 
+  // If the app is accessed via IP (e.g. on a phone), but the API URL is still "localhost",
+  // we dynamically replace "localhost" with the current hostname so the phone can reach the PC server.
+  if (raw.includes('localhost') && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    raw = raw.replace('localhost', window.location.hostname)
+  }
+
   return raw.replace(/\/$/, '')
 }
 

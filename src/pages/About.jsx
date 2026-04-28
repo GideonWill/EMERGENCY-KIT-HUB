@@ -4,15 +4,13 @@ import { CTA_PRIMARY, COMPANY_NAME } from '../config/brand'
 export default function About() {
   return (
     <div className="bg-white">
-      {/* Featured Brand Image */}
-      <div className="w-full bg-slate-50 border-b border-slate-100">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <img 
-            src="/hero section home.png" 
-            alt="TOBINCO Medical Emergency Kit" 
-            className="w-full h-auto max-h-[500px] object-contain object-center py-12"
-          />
-        </div>
+      {/* Full-Bleed Featured Image */}
+      <div className="w-full bg-slate-50 border-b border-slate-100 overflow-hidden">
+        <img 
+          src="/hero section home.png" 
+          alt="TOBINCO Medical Emergency Kit" 
+          className="w-full h-auto object-cover md:max-h-[600px]"
+        />
       </div>
 
       {/* Narrative Header */}

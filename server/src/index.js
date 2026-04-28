@@ -105,8 +105,8 @@ if (!process.env.VERCEL) {
   const port = Number(process.env.PORT) || 5000
   connectDb()
     .then(() => {
-      app.listen(port, () => {
-        console.log(`API listening on http://localhost:${port}`)
+      app.listen(port, '0.0.0.0', () => {
+        console.log(`API listening on port ${port} (Available on all network interfaces)`)
       })
     })
     .catch((e) => {
