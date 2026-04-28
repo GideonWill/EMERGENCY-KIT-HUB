@@ -2,17 +2,17 @@ import 'dotenv/config';
 import Product from './models/Product.js';
 
 const products = [
-  { name: 'Amovulin', file: '/Amovulin.jpg', price: 45 },
+  { name: 'Amovulin', file: '/Amovulin.jpg', price: 45, badge: 'Best Seller' },
   { name: 'Entramol', file: '/Entramol.png', price: 25 },
-  { name: 'Neuro-Min Plus', file: '/NEURO-MIN-PLUS.png', price: 85 },
+  { name: 'Neuro-Min Plus', file: '/NEURO-MIN-PLUS.png', price: 85, badge: 'Best Seller' },
   { name: 'TobCee', file: '/TobCee.png', price: 30 },
   { name: 'TobVital', file: '/TobVital.jpg', price: 40 },
   { name: 'Xferon', file: '/XFERON.png', price: 55 },
   { name: 'Xzole F', file: '/Xzole F.jpg', price: 35 },
-  { name: 'Zinvite', file: '/Zinvite.png', price: 60 },
+  { name: 'Zinvite', file: '/Zinvite.png', price: 60, badge: 'Best Seller' },
   { name: 'Foligrow', file: '/foligrow.png', price: 45 },
   { name: 'Kofof', file: '/kofof.png', price: 20 },
-  { name: 'Lufart DS', file: '/lufart ds.png', price: 50 }
+  { name: 'Lufart DS', file: '/lufart ds.png', price: 50, badge: 'Best Seller' }
 ];
 
 async function run() {
@@ -36,7 +36,8 @@ async function run() {
       image: p.file,
       sku: `DRUG-${slug.toUpperCase()}`,
       active: true,
-      status: 'In Stock'
+      status: 'In Stock',
+      badge: p.badge || null
     });
     console.log(`Created: ${p.name}`);
   }

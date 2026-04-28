@@ -41,6 +41,7 @@ export function AuthProvider({ children }) {
           email: data.user.email,
           name: data.user.name || data.user.email,
           role: data.user.role || 'user',
+          isSubscriber: data.user.isSubscriber || false,
         })
         setLoading(false)
         return
@@ -66,6 +67,7 @@ export function AuthProvider({ children }) {
             ? `${res.data.profile.firstName} ${res.data.profile.lastName || ''}`.trim()
             : res.data.email,
           role: res.data.role,
+          isSubscriber: res.data.isSubscriber || false,
         })
       } else {
         setStoredToken('')
@@ -110,6 +112,7 @@ export function AuthProvider({ children }) {
           email: result.data.user.email,
           name: result.data.user.name || result.data.user.email,
           role: result.data.user.role || 'user',
+          isSubscriber: result.data.user.isSubscriber || false,
         }
         setUser(u)
         return { data: { user: u } }
@@ -133,6 +136,7 @@ export function AuthProvider({ children }) {
           ? `${res.data.user.profile.firstName} ${res.data.user.profile.lastName || ''}`.trim()
           : res.data.user.email,
         role: res.data.user.role,
+        isSubscriber: res.data.isSubscriber || false,
       }
       setUser(u)
       return { data: { user: u, token: res.data.token } }
@@ -173,6 +177,7 @@ export function AuthProvider({ children }) {
           email: neonAuthResult.data.user.email,
           name: neonAuthResult.data.user.name || neonAuthResult.data.user.email,
           role: neonAuthResult.data.user.role || 'user',
+          isSubscriber: false,
         }
         setUser(u)
         return { data: { user: u } }
@@ -195,6 +200,7 @@ export function AuthProvider({ children }) {
           email: res.data.user.email,
           name: `${firstName || ''} ${lastName || ''}`.trim() || res.data.user.email,
           role: res.data.user.role,
+          isSubscriber: res.data.isSubscriber || false,
         }
         setUser(u)
         return { data: { user: u, token: res.data.token } }
@@ -242,6 +248,7 @@ export function AuthProvider({ children }) {
       loading,
       isAuthenticated: !!user,
       isAdmin: user?.role === 'admin' || user?.email === 'gideonogunu@gmail.com' || (isDemoMode() && user?.email === 'admin@example.com'),
+      isSubscriber: !!user?.isSubscriber,
       refreshUser,
       login,
       register,

@@ -247,6 +247,12 @@ export default function Navbar() {
                   Admin Portal
                 </Link>
               )}
+              {useAuth().isSubscriber && (
+                <span className="flex items-center gap-1 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 border border-amber-200">
+                  <span className="h-1.5 w-1.5 bg-amber-500" />
+                  Premium
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => setLogoutModalOpen(true)}

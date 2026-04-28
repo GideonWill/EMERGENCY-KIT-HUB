@@ -16,7 +16,7 @@ const MOCK_ORDER_DATA = {
 const STATUSES = ['Order Placed', 'Processing', 'Shipped', 'Delivered']
 
 export default function Tracking() {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, isSubscriber } = useAuth()
   const [orderId, setOrderId] = useState('')
   const [trackedOrder, setTrackedOrder] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -91,6 +91,17 @@ export default function Tracking() {
             Stay updated on your {COMPANY_NAME_SHORT} order's journey from our warehouse to your front door.
           </p>
         </div>
+
+        {isSubscriber && (
+          <div className="mb-8 flex items-center justify-center gap-3 animate-in fade-in zoom-in duration-700">
+            <div className="h-px w-12 bg-amber-200" />
+            <span className="bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-2 text-xs font-bold uppercase tracking-[0.3em] text-amber-700 border border-amber-200 shadow-sm flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+              Premium Care Member
+            </span>
+            <div className="h-px w-12 bg-amber-200" />
+          </div>
+        )}
 
         <div className="bg-white shadow-2xl shadow-slate-200/50 rounded-none p-6 sm:p-10">
           <form onSubmit={handleTrack} className="flex flex-col sm:flex-row gap-3">

@@ -28,12 +28,12 @@ const Product = {
     return rows.map(Product._format)
   },
 
-  async create({ name, slug, description, priceCents, image, sku, active = true, status = 'In Stock' }) {
+  async create({ name, slug, description, priceCents, image, sku, active = true, status = 'In Stock', badge = null }) {
     const { rows } = await query(
-      `INSERT INTO products (name, slug, description, price_cents, image, sku, active, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO products (name, slug, description, price_cents, image, sku, active, status, badge)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [name, slug, description, priceCents, image, sku, active, status]
+      [name, slug, description, priceCents, image, sku, active, status, badge]
     )
     return Product._format(rows[0])
   },
@@ -77,6 +77,7 @@ const Product = {
     sku: 'sku',
     active: 'active',
     status: 'status',
+    badge: 'badge',
   },
 
   _format(row) {
@@ -92,6 +93,7 @@ const Product = {
       sku: row.sku,
       active: row.active,
       status: row.status,
+      badge: row.badge,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     }
