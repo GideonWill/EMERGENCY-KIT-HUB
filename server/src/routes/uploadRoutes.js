@@ -28,7 +28,8 @@ router.post('/', protect, adminOnly, upload.single('image'), async (req, res) =>
     // ── Production: Vercel Blob Storage ──
     if (process.env.BLOB_READ_WRITE_TOKEN) {
       const { put } = await import('@vercel/blob')
-      const filename = `products/${Date.now()}-${req.file.originalname}`
+      const safeOriginal = path.basename(req.file.originalname).replace(/[^a-zA-Z0-9.\-_]/g, '_')
+      const filename = `products/${Date.now()}-${safeOriginal}`
       const blob = await put(filename, req.file.buffer, {
         access: 'public',
         contentType: req.file.mimetype,
@@ -40,7 +41,8 @@ router.post('/', protect, adminOnly, upload.single('image'), async (req, res) =>
     const uploadsDir = path.join(process.cwd(), 'server', 'uploads')
     if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true })
 
-    const filename = `image-${Date.now()}${path.extname(req.file.originalname)}`
+    const safeOriginalLocal = path.basename(req.file.originalname).replace(/[^a-zA-Z0-9.\-_]/g, '_')
+    const filename = `image-${Date.now()}-${safeOriginalLocal}`
     fs.writeFileSync(path.join(uploadsDir, filename), req.file.buffer)
 
     const url = `${req.protocol}://${req.get('host')}/uploads/${filename}`

@@ -42,6 +42,15 @@ const limiter = rateLimit({
 })
 app.use('/api/', limiter)
 
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 requests per 15 minutes for auth endpoints
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many login attempts, please try again later.' }
+})
+app.use('/api/auth', authLimiter)
+
 // Request logger
 app.use((req, res, next) => {
   const start = Date.now()

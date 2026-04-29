@@ -247,7 +247,7 @@ export function AuthProvider({ children }) {
       user,
       loading,
       isAuthenticated: !!user,
-      isAdmin: user?.role === 'admin' || user?.email === 'gideonogunu@gmail.com' || (isDemoMode() && user?.email === 'admin@example.com'),
+      isAdmin: user?.role === 'admin' || (isDemoMode() && user?.email === 'admin@example.com'),
       isSubscriber: !!user?.isSubscriber,
       refreshUser,
       login,
