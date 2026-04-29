@@ -40,9 +40,6 @@ export function setStoredToken(token) {
 
 export async function apiFetch(path, options = {}) {
   const base = getApiBase()
-  if (!base) {
-    throw new Error('VITE_API_URL is not set')
-  }
   const headers = new Headers(options.headers)
   if (options.body && typeof options.body === 'string' && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
