@@ -21,6 +21,7 @@ export default function AdminDashboard() {
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [activeTab, setActiveTab] = useState('orders')
   const [newProduct, setNewProduct] = useState({ name: '', price: '', category: '', status: 'In Stock', image: null })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (activeTab === 'payments') {
@@ -197,7 +198,8 @@ export default function AdminDashboard() {
 
   const addProduct = async (e) => {
     e.preventDefault()
-    if (!newProduct.name || !newProduct.price) return
+    if (!newProduct.name || !newProduct.price || isSubmitting) return
+    setIsSubmitting(true)
     const priceCents = Math.round(parseFloat(newProduct.price) * 100)
     
     // Generate a quick slug
@@ -249,6 +251,8 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error(err)
       alert('Failed to create product.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -607,9 +611,10 @@ export default function AdminDashboard() {
                   </div>
                   <button 
                     type="submit"
-                    className={`w-full py-3 text-sm font-bold uppercase tracking-widest ${CTA_PRIMARY}`}
+                    disabled={isSubmitting}
+                    className={`w-full py-3 text-sm font-bold uppercase tracking-widest ${isSubmitting ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : CTA_PRIMARY}`}
                   >
-                    Add Product
+                    {isSubmitting ? 'Adding...' : 'Add Product'}
                   </button>
                 </form>
               </div>
