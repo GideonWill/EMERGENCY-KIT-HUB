@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
-import { apiFetch, getApiBase } from '../lib/api'
+import { apiFetch } from '../lib/api'
 import { FRONTEND_ID_TO_API_SLUG } from '../data/productApiSlugMap'
 import AuthInlinePanel from '../components/AuthInlinePanel'
 import { COMPANY_NAME_SHORT, CTA_PRIMARY, CTA_SECONDARY } from '../config/brand'
@@ -31,56 +31,57 @@ export default function Cart() {
     try {
       // 1) Verify products against the backend
       const itemsPayload = []
-      if (getApiBase()) {
-        const catalog = await apiFetch('/api/products').catch(() => null)
-        if (catalog && catalog.data) {
-          const bySlug = new Map(catalog.data.map((p) => [p.slug, p]))
-          const byId = new Map(catalog.data.map((p) => [p.id, p]))
+      const catalog = await apiFetch('/api/products').catch(() => null)
+      if (catalog && catalog.data) {
+        const bySlug = new Map(catalog.data.map((p) => [p.slug, p]))
+        const byId = new Map(catalog.data.map((p) => [p.id, p]))
 
-          for (const line of lines) {
-            // 1. Try static mapping for initial products
-            const mappedSlug = FRONTEND_ID_TO_API_SLUG[line.id]
-            let dbProduct = mappedSlug ? bySlug.get(mappedSlug) : null
-            
-            // 2. If not found, try direct ID lookup (for new Admin products)
-            if (!dbProduct) {
-              dbProduct = byId.get(line.id) || byId.get(Number(line.id))
-            }
-            
-            // 3. Last resort: try direct slug lookup
-            if (!dbProduct) {
-              dbProduct = bySlug.get(line.id)
-            }
-            
-            if (dbProduct) {
-              itemsPayload.push({
-                productId: dbProduct.id,
-                quantity: Number(line.quantity)
-              })
-            } else {
-              console.error(`Product not found in database for id/slug: ${line.id}`)
-              setMsg(`Product "${line.name}" is currently unavailable for checkout.`)
-              setBusy(false)
-              return
-            }
+        for (const line of lines) {
+          // 1. Try static mapping for initial products
+          const mappedSlug = FRONTEND_ID_TO_API_SLUG[line.id]
+          let dbProduct = mappedSlug ? bySlug.get(mappedSlug) : null
+
+          // 2. If not found, try direct ID lookup (for new Admin products)
+          if (!dbProduct) {
+            dbProduct = byId.get(line.id) || byId.get(Number(line.id))
+          }
+
+          // 3. Last resort: try direct slug lookup
+          if (!dbProduct) {
+            dbProduct = bySlug.get(line.id)
+          }
+
+          if (dbProduct) {
+            itemsPayload.push({
+              productId: dbProduct.id,
+              quantity: Number(line.quantity)
+            })
+          } else {
+            console.error(`Product not found in database for id/slug: ${line.id}`)
+            setMsg(`Product "${line.name}" is currently unavailable for checkout.`)
+            setBusy(false)
+            return
           }
         }
+      } else {
+        setMsg('Unable to verify products. Please try again.')
+        setBusy(false)
+        return
       }
 
-      // 2) Try Paystack Checkout via backend
-      if (itemsPayload.length > 0) {
-        const res = await apiFetch('/api/payments/create-checkout-session', {
-          method: 'POST',
-          body: JSON.stringify({ 
-            items: itemsPayload,
-            shippingSnapshot: { method: 'Paystack' }
-          })
+      // 2) Paystack Checkout via backend
+      const res = await apiFetch('/api/payments/create-checkout-session', {
+        method: 'POST',
+        body: JSON.stringify({
+          items: itemsPayload,
+          shippingSnapshot: { method: 'Paystack' }
         })
-        if (res.success && res.data?.url) {
-          window.location.href = res.data.url
-          return
-        }
+      })
+      if (res.success && res.data?.url) {
+        window.location.href = res.data.url
+        return
       }
+      setMsg(res.message || 'Payment session could not be created. Please try again.')
     } catch (e) {
       setMsg(e.message || 'Checkout failed')
     } finally {
