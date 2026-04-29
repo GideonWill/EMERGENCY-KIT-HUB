@@ -88,7 +88,7 @@ export const createCheckoutSession = asyncHandler(async (req, res) => {
       first_name: req.user.firstName,
       last_name: req.user.lastName,
       phone: req.user.phone,
-      callback_url: `${req.headers.origin || 'http://localhost:5173'}/checkout/success?method=paystack&orderId=${order._id}`,
+      callback_url: `${process.env.FRONTEND_URL || (req.headers.host ? `https://${req.headers.host}` : 'http://localhost:5173')}/checkout/success?method=paystack&orderId=${order._id}`,
       metadata: {
         orderId: String(order._id),
         userId: String(req.user._id),

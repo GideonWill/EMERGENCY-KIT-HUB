@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CTA_PRIMARY, CTA_SECONDARY } from '../config/brand'
 import { useCart } from '../context/CartContext'
+import { useAuth } from '../context/AuthContext'
 import { apiFetch } from '../lib/api'
 
 export default function CheckoutSuccess() {
