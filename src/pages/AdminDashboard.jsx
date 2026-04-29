@@ -12,6 +12,9 @@ export default function AdminDashboard() {
   const [inventory, setInventory] = useState([])
   const [loadingInventory, setLoadingInventory] = useState(true)
 
+  const [users, setUsers] = useState([])
+  const [loadingUsers, setLoadingUsers] = useState(true)
+
   const [transactions, setTransactions] = useState([])
   const [loadingTransactions, setLoadingTransactions] = useState(false)
   
@@ -33,6 +36,21 @@ export default function AdminDashboard() {
         }
       }
       loadTransactions()
+    }
+    
+    if (activeTab === 'customers') {
+      async function loadUsers() {
+        setLoadingUsers(true)
+        try {
+          const res = await apiFetch('/api/users/all')
+          if (res.success) setUsers(res.data || [])
+        } catch (err) {
+          console.error(err)
+        } finally {
+          setLoadingUsers(false)
+        }
+      }
+      loadUsers()
     }
   }, [activeTab])
   // Load Orders from API
@@ -139,6 +157,22 @@ export default function AdminDashboard() {
       console.error(err)
       setInventory(previous)
       alert('Failed to update product status.')
+    }
+  }
+
+  const updateUserRole = async (id, newRole) => {
+    const previous = users.map(u => ({ ...u }))
+    setUsers(users.map(u => u.id === id ? { ...u, role: newRole } : u))
+    try {
+      const res = await apiFetch(`/api/users/${id}/role`, {
+        method: 'PUT',
+        body: JSON.stringify({ role: newRole })
+      })
+      if (!res.success) throw new Error(res.message)
+    } catch (err) {
+      console.error(err)
+      setUsers(previous)
+      alert(err.message || 'Failed to update user role.')
     }
   }
 
@@ -415,31 +449,44 @@ export default function AdminDashboard() {
 
         {activeTab === 'customers' && (
           <div className="p-4 sm:p-8">
-            <h1 className="text-2xl font-display text-slate-900">Customer Directory</h1>
-            <p className="text-sm text-slate-600 mt-1 mb-8">View and manage registered clients and pharmaceutical facilities.</p>
+            <h1 className="text-2xl font-display text-slate-900">User Management</h1>
+            <p className="text-sm text-slate-600 mt-1 mb-8">View and manage all registered accounts and assign admin privileges.</p>
             <div className="bg-white border border-slate-200 shadow-sm overflow-x-auto">
               <table className="w-full text-left whitespace-nowrap">
                 <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
                   <tr>
                     <th className="px-6 py-4">Name</th>
                     <th className="px-6 py-4">Email</th>
-                    <th className="px-6 py-4">Phone</th>
-                    <th className="px-6 py-4">Facility</th>
-                    <th className="px-6 py-4 text-right">Total Orders</th>
+                    <th className="px-6 py-4 text-center">Orders</th>
+                    <th className="px-6 py-4">Joined</th>
+                    <th className="px-6 py-4 text-right">Role</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
-                  {Array.from(new Map(orders.map(o => [o.user.email, o.user])).values()).map((customer, idx) => {
-                     const customerOrders = orders.filter(o => o.user.email === customer.email);
-                     const fullName = `${customer.profile?.firstName || ''} ${customer.profile?.lastName || ''}`.trim() || customer.email
+                  {loadingUsers ? (
+                    <tr><td colSpan="5" className="py-8 text-center text-slate-500">Loading users...</td></tr>
+                  ) : users.map((user) => {
+                     const userOrdersCount = orders.filter(o => o.user.email === user.email).length;
+                     const fullName = `${user.profile?.firstName || ''} ${user.profile?.lastName || ''}`.trim() || user.email
                      return (
-                        <tr key={idx} className="hover:bg-slate-50 transition">
+                        <tr key={user.id} className="hover:bg-slate-50 transition">
                           <td className="px-6 py-4 font-medium text-slate-900">{fullName}</td>
-                          <td className="px-6 py-4 text-slate-500">{customer.email}</td>
-                          <td className="px-6 py-4 text-slate-500">{customer.profile?.phone || 'N/A'}</td>
-                          <td className="px-6 py-4 text-slate-500">Registered User</td>
-                          <td className="px-6 py-4 text-right font-semibold">
-                             {customerOrders.length}
+                          <td className="px-6 py-4 text-slate-500">{user.email}</td>
+                          <td className="px-6 py-4 text-center font-semibold text-slate-700">{userOrdersCount}</td>
+                          <td className="px-6 py-4 text-slate-500">{new Date(user.createdAt).toLocaleDateString()}</td>
+                          <td className="px-6 py-4 text-right">
+                            <select 
+                              value={user.role || 'user'}
+                              onChange={(e) => updateUserRole(user.id, e.target.value)}
+                              className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider outline-none border-none cursor-pointer ${
+                                user.role === 'admin' 
+                                  ? 'bg-brand-100 text-brand-800' 
+                                  : 'bg-slate-100 text-slate-700'
+                              }`}
+                            >
+                              <option value="user">User</option>
+                              <option value="admin">Admin</option>
+                            </select>
                           </td>
                         </tr>
                      )

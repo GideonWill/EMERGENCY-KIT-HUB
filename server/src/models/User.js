@@ -57,6 +57,21 @@ const User = {
     )
   },
 
+  async findAll() {
+    const { rows } = await query(
+      'SELECT id, email, role, first_name, last_name, phone, health_placeholder, stripe_customer_id, created_at, updated_at FROM users ORDER BY created_at DESC'
+    )
+    return rows.map(User._format)
+  },
+
+  async updateRole(id, role) {
+    const { rows } = await query(
+      'UPDATE users SET role = $2, updated_at = now() WHERE id = $1 RETURNING *',
+      [id, role]
+    )
+    return rows[0] ? User._format(rows[0]) : null
+  },
+
   /** Map snake_case row → camelCase object matching old Mongoose shape */
   _format(row) {
     if (!row) return null

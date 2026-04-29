@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { body } from 'express-validator'
-import { protect } from '../middleware/auth.js'
-import { getMe, updateMe } from '../controllers/userController.js'
+import { protect, adminOnly } from '../middleware/auth.js'
+import { getMe, updateMe, listAllUsers, updateUserRole } from '../controllers/userController.js'
 
 const router = Router()
 
@@ -18,5 +18,8 @@ router.patch(
   ],
   updateMe
 )
+
+router.get('/all', adminOnly, listAllUsers)
+router.put('/:id/role', adminOnly, updateUserRole)
 
 export default router

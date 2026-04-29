@@ -44,3 +44,31 @@ export const updateMe = asyncHandler(async (req, res) => {
     },
   })
 })
+
+export const listAllUsers = asyncHandler(async (req, res) => {
+  const users = await User.findAll()
+  res.json({ success: true, data: users })
+})
+
+export const updateUserRole = asyncHandler(async (req, res) => {
+  const id = Number(req.params.id)
+  const { role } = req.body
+  if (!Number.isInteger(id) || id < 1) {
+    return res.status(400).json({ success: false, message: 'Invalid user id' })
+  }
+  if (!role || !['user', 'admin'].includes(role)) {
+    return res.status(400).json({ success: false, message: 'Invalid role' })
+  }
+  
+  // Prevent admin from removing their own admin role
+  if (id === req.user._id && role !== 'admin') {
+    return res.status(400).json({ success: false, message: 'You cannot remove your own admin role.' })
+  }
+
+  const user = await User.updateRole(id, role)
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'User not found' })
+  }
+  
+  res.json({ success: true, data: user })
+})
