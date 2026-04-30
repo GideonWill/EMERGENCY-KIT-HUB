@@ -22,6 +22,8 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('orders')
   const [newProduct, setNewProduct] = useState({ name: '', price: '', category: '', status: 'In Stock', image: null })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [ordersPage, setOrdersPage] = useState(1)
+  const ORDERS_PER_PAGE = 10
 
   useEffect(() => {
     if (activeTab === 'payments') {
@@ -338,7 +340,7 @@ export default function AdminDashboard() {
             className={`w-full flex items-center justify-start gap-3 px-3 py-2 rounded-md transition font-medium ${activeTab === 'customers' ? 'bg-brand-600 text-white' : 'hover:bg-slate-800 hover:text-white'}`}
           >
              <UsersIcon className="w-5 h-5" />
-             <span>Customers</span>
+             <span>Users & Admins</span>
           </button>
           <button 
             onClick={() => { setActiveTab('analytics'); setSelectedOrder(null); }}
@@ -751,43 +753,77 @@ export default function AdminDashboard() {
                   <tbody className="divide-y divide-slate-100 text-sm">
                     {loadingOrders ? (
                       <tr><td colSpan="6" className="py-8 text-center text-slate-500">Loading orders...</td></tr>
-                    ) : orders.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(order => {
-                      const fullName = `${order.user.profile?.firstName || ''} ${order.user.profile?.lastName || ''}`.trim() || order.user.email
-                      return (
-                      <tr key={order.id} className="hover:bg-slate-50 transition">
-                        <td className="px-6 py-4 font-medium text-slate-900">{order.id}</td>
-                        <td className="px-6 py-4 text-slate-500">{new Date(order.createdAt).toLocaleDateString()}</td>
-                        <td className="px-6 py-4">
-                          <p className="font-semibold text-slate-800">{fullName}</p>
-                          <p className="text-xs text-slate-500">{order.user.email}</p>
-                        </td>
-                        <td className="px-6 py-4 text-right font-semibold text-slate-900">
-                          {formatCurrency(order.totalCents)}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <div className="flex flex-col items-center gap-1">
-                            <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColors[order.status]}`}>
-                              {order.status}
-                            </span>
-                            {isSubscriptionOrder(order) && (
-                              <span className="inline-flex px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-100">
-                                Subscription
+                    ) : (() => {
+                      const sortedOrders = [...orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                      const startIndex = (ordersPage - 1) * ORDERS_PER_PAGE
+                      const paginatedOrders = sortedOrders.slice(startIndex, startIndex + ORDERS_PER_PAGE)
+                      
+                      if (paginatedOrders.length === 0) {
+                        return <tr><td colSpan="6" className="py-8 text-center text-slate-500">No orders found.</td></tr>
+                      }
+                      
+                      return paginatedOrders.map(order => {
+                        const fullName = `${order.user.profile?.firstName || ''} ${order.user.profile?.lastName || ''}`.trim() || order.user.email
+                        return (
+                        <tr key={order.id} className="hover:bg-slate-50 transition">
+                          <td className="px-6 py-4 font-medium text-slate-900">{order.id}</td>
+                          <td className="px-6 py-4 text-slate-500">{new Date(order.createdAt).toLocaleDateString()}</td>
+                          <td className="px-6 py-4">
+                            <p className="font-semibold text-slate-800">{fullName}</p>
+                            <p className="text-xs text-slate-500">{order.user.email}</p>
+                          </td>
+                          <td className="px-6 py-4 text-right font-semibold text-slate-900">
+                            {formatCurrency(order.totalCents)}
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex flex-col items-center gap-1">
+                              <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColors[order.status]}`}>
+                                {order.status}
                               </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <button 
-                            onClick={() => setSelectedOrder(order)}
-                            className="text-brand-700 font-medium hover:underline"
-                          >
-                            View Receipt
-                          </button>
-                        </td>
-                      </tr>
-                    )})}
+                              {isSubscriptionOrder(order) && (
+                                <span className="inline-flex px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-100">
+                                  Subscription
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <button 
+                              onClick={() => setSelectedOrder(order)}
+                              className="text-brand-700 font-medium hover:underline"
+                            >
+                              View Receipt
+                            </button>
+                          </td>
+                        </tr>
+                        )
+                      })
+                    })()}
                   </tbody>
                 </table>
+                {!loadingOrders && orders.length > 0 && (
+                  <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50">
+                    <div className="text-sm text-slate-500">
+                      Showing <span className="font-semibold text-slate-900">{Math.min((ordersPage - 1) * ORDERS_PER_PAGE + 1, orders.length)}</span> to <span className="font-semibold text-slate-900">{Math.min(ordersPage * ORDERS_PER_PAGE, orders.length)}</span> of <span className="font-semibold text-slate-900">{orders.length}</span> results
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setOrdersPage(p => Math.max(1, p - 1))}
+                        disabled={ordersPage === 1}
+                        className="px-3 py-1.5 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        onClick={() => setOrdersPage(p => p + 1)}
+                        disabled={ordersPage * ORDERS_PER_PAGE >= orders.length}
+                        className="px-3 py-1.5 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )
