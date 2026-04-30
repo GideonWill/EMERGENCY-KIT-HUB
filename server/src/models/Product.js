@@ -60,8 +60,15 @@ const Product = {
   },
 
   async delete(id) {
-    const { rowCount } = await query('DELETE FROM products WHERE id = $1', [id])
-    return rowCount > 0
+    try {
+      const { rowCount } = await query('DELETE FROM products WHERE id = $1', [id])
+      return rowCount > 0
+    } catch (error) {
+      if (error.code === '23503') { // Foreign key violation
+        throw new Error('Cannot delete this product because it has been ordered by customers. Please mark it as Out of Stock instead.')
+      }
+      throw error
+    }
   },
 
   async findOneBySlug(slug) {

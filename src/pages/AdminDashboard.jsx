@@ -186,12 +186,12 @@ export default function AdminDashboard() {
           method: 'DELETE'
         })
         if (!res.success) {
-          throw new Error('Delete failed')
+          throw new Error(res.message || 'Delete failed')
         }
       } catch (err) {
         console.error(err)
         setInventory(previous)
-        alert('Failed to delete product.')
+        alert(err.message || 'Failed to delete product.')
       }
     }
   }

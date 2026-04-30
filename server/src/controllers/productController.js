@@ -95,9 +95,16 @@ export const updateProduct = asyncHandler(async (req, res) => {
 })
 
 export const deleteProduct = asyncHandler(async (req, res) => {
-  const deleted = await Product.delete(req.params.id)
-  if (!deleted) {
-    return res.status(404).json({ success: false, message: 'Product not found' })
+  try {
+    const deleted = await Product.delete(req.params.id)
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Product not found' })
+    }
+    res.json({ success: true, message: 'Deleted' })
+  } catch (error) {
+    if (error.message.includes('ordered by customers')) {
+      return res.status(400).json({ success: false, message: error.message })
+    }
+    throw error
   }
-  res.json({ success: true, message: 'Deleted' })
 })
