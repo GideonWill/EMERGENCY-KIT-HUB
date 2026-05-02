@@ -17,7 +17,23 @@ export function getRelatedProducts(currentId, limit = 4) {
   return products.filter((p) => p.id !== currentId).slice(0, limit)
 }
 
-export const testimonials = []
+export const testimonials = [
+  {
+    quote: "The Emergency Kit gives our family peace of mind. The quality of the supplies and the clear instructions make it invaluable during unexpected situations.",
+    author: "Sarah Mensah",
+    product: "Premium Family Emergency Kit"
+  },
+  {
+    quote: "As a school administrator, standardizing our safety protocols was a priority. Tobinco's institutional solutions provided exactly what we needed to keep our students safe.",
+    author: "Kwame Osei",
+    product: "Institutional Safety Solutions"
+  },
+  {
+    quote: "The tele-consultation service was seamless. Having access to medical professionals who understand the contents of the emergency kit gave me immediate clarity.",
+    author: "Abena Asamoah",
+    product: "Wellness Hub & Consultation"
+  }
+]
 
 export const team = [
   {
